@@ -12,11 +12,11 @@ public enum AgeEncryption {
     public static func keygen() -> (String, String) {
         let cSecretKey = UnsafeMutablePointer<UnsafeMutablePointer<CChar>?>.allocate(capacity: 1)
         let cPublicKey = UnsafeMutablePointer<UnsafeMutablePointer<CChar>?>.allocate(capacity: 1)
-        
-        rust_age_encryption_keygen(cSecretKey, cPublicKey);
+
+        rust_age_encryption_keygen(cSecretKey, cPublicKey)
         let secretKey = String(cString: cSecretKey.pointee!)
         let publicKey = String(cString: cPublicKey.pointee!)
-        
+
         rust_age_encryption_free_str(cSecretKey.pointee!)
         rust_age_encryption_free_str(cPublicKey.pointee!)
         cSecretKey.deallocate()
@@ -24,7 +24,7 @@ public enum AgeEncryption {
 
         return (secretKey, publicKey)
     }
-    
+
     public static func toRawX25519Key(_ secretKey: String) -> Data? {
         let cOutput = UnsafeMutablePointer<UnsafeMutablePointer<CChar>?>.allocate(capacity: 1)
 
@@ -39,7 +39,7 @@ public enum AgeEncryption {
             return nil
         }
     }
-    
+
     public static func encryptWithPassphrase(_ plaintext: Data, _ passphrase: String, armor: Bool) -> Data? {
         plaintext.withUnsafeBytes { (cPlaintext) in
             let cOutput = UnsafeMutablePointer<UnsafeMutablePointer<CChar>?>.allocate(capacity: 1)
@@ -73,11 +73,11 @@ public enum AgeEncryption {
             }
         }
     }
-    
+
     public static func encryptWithX25519(_ plaintext: Data, _ publicKey: String, armor: Bool) -> Data? {
         plaintext.withUnsafeBytes { (cPlaintext) in
             let cOutput = UnsafeMutablePointer<UnsafeMutablePointer<CChar>?>.allocate(capacity: 1)
-            
+
             let ret = rust_age_encrypt_with_x25519(publicKey.cString(using: .utf8), cPlaintext.bindMemory(to: CChar.self).baseAddress, Int32(plaintext.count), armor ? 1 : 0, cOutput)
             if ret > 0 {
                 let cOutputBuf = UnsafeBufferPointer.init(start: cOutput.pointee, count: Int(ret))
@@ -90,7 +90,7 @@ public enum AgeEncryption {
             }
         }
     }
-    
+
     public static func decryptWithX25519(_ ciphertext: Data, _ secretKey: String) -> Data? {
         ciphertext.withUnsafeBytes { (cCiphertext) in
             let cOutput = UnsafeMutablePointer<UnsafeMutablePointer<CChar>?>.allocate(capacity: 1)

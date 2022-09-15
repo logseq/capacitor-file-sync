@@ -52,13 +52,13 @@ extension Array where Element == UInt8 {
 
 extension Data {
     public init?(hexEncoded: String) {
-        self.init(Array<UInt8>(hex: hexEncoded))
+        self.init([UInt8](hex: hexEncoded))
     }
-    
+
     var hexDescription: String {
         return map { String(format: "%02hhx", $0) }.joined()
     }
-    
+
     var MD5: String {
         let computed = Insecure.MD5.hash(data: self)
         return computed.map { String(format: "%02hhx", $0) }.joined()
@@ -70,12 +70,12 @@ extension String {
         let computed = Insecure.MD5.hash(data: self.data(using: .utf8)!)
         return computed.map { String(format: "%02hhx", $0) }.joined()
     }
-    
+
     static func random(length: Int) -> String {
         let letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-        return String((0..<length).map{ _ in letters.randomElement()! })
+        return String((0..<length).map { _ in letters.randomElement()! })
     }
-    
+
     func fnameEncrypt(rawKey: Data) -> String? {
         guard !self.isEmpty else {
             return nil
@@ -83,31 +83,31 @@ extension String {
         guard let raw = self.data(using: .utf8) else {
             return nil
         }
-        
+
         let key = SymmetricKey(data: rawKey)
         let nonce = try! ChaChaPoly.Nonce(data: Data(repeating: 0, count: 12))
         guard let sealed = try? ChaChaPoly.seal(raw, using: key, nonce: nonce) else { return nil }
-        
+
         // strip nonce here, since it's all zero
         return "e." + (sealed.ciphertext + sealed.tag).hexDescription
-        
+
     }
-    
+
     func fnameDecrypt(rawKey: Data) -> String? {
         // well-formated, non-empty encrypted string
         guard self.hasPrefix("e.") && self.count > 36 else {
             return nil
         }
-        
+
         let encryptedHex = self.suffix(from: self.index(self.startIndex, offsetBy: 2))
         guard let encryptedRaw = Data(hexEncoded: String(encryptedHex)) else {
             // invalid hex
             return nil
         }
-        
+
         let key = SymmetricKey(data: rawKey)
         let nonce = Data(repeating: 0, count: 12)
-        
+
         guard let sealed = try? ChaChaPoly.SealedBox(combined: nonce + encryptedRaw) else {
             return nil
         }
@@ -124,29 +124,29 @@ extension URL {
         guard self.isFileURL && base.isFileURL else {
             return nil
         }
-        
+
         // Remove/replace "." and "..", make paths absolute:
         let destComponents = self.standardized.pathComponents
         let baseComponents = base.standardized.pathComponents
-        
+
         // Find number of common path components:
         var i = 0
         while i < destComponents.count && i < baseComponents.count
                 && destComponents[i] == baseComponents[i] {
             i += 1
         }
-        
+
         // Build relative path:
         var relComponents = Array(repeating: "..", count: baseComponents.count - i)
         relComponents.append(contentsOf: destComponents[i...])
         return relComponents.joined(separator: "/")
     }
-    
+
     func ensureParentDir() {
         let dirURL = self.deletingLastPathComponent()
         try? FileManager.default.createDirectory(at: dirURL, withIntermediateDirectories: true, attributes: nil)
     }
-    
+
     func writeData(data: Data) throws {
         self.ensureParentDir()
         if FileManager.default.fileExists(atPath: self.path) {
@@ -154,14 +154,14 @@ extension URL {
         }
         try data.write(to: self, options: .atomic)
     }
-    
+
     func isICloudPlaceholder() -> Bool {
         if self.lastPathComponent.starts(with: ".") && self.pathExtension.lowercased() == "icloud" {
             return true
         }
         return false
     }
-    
+
     func isSkipSync() -> Bool {
         // skip hidden file
         if self.lastPathComponent.starts(with: ".") {

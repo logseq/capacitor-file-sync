@@ -9,7 +9,6 @@ import Capacitor
 import Foundation
 import CryptoKit
 
-
 // MARK: Global variable
 
 // Defualts to dev
@@ -17,9 +16,9 @@ var URL_BASE = URL(string: "https://api-dev.logseq.com/file-sync/")!
 var BUCKET: String = "logseq-file-sync-bucket"
 var REGION: String = "us-east-2"
 
-var ENCRYPTION_SECRET_KEY: String? = nil
-var ENCRYPTION_PUBLIC_KEY: String? = nil
-var FNAME_ENCRYPTION_KEY: Data? = nil
+var ENCRYPTION_SECRET_KEY: String?
+var ENCRYPTION_PUBLIC_KEY: String?
+var FNAME_ENCRYPTION_KEY: Data?
 
 let FileSyncErrorDomain = "com.logseq.app.FileSyncErrorDomain"
 
@@ -71,10 +70,10 @@ public struct SyncMetadata: CustomStringConvertible, Equatable {
     var size: Int
     var ctime: Int64
     var mtime: Int64
-    
+
     public init?(of fileURL: URL) {
         do {
-            let fileAttributes = try fileURL.resourceValues(forKeys:[.isRegularFileKey, .fileSizeKey, .contentModificationDateKey,
+            let fileAttributes = try fileURL.resourceValues(forKeys: [.isRegularFileKey, .fileSizeKey, .contentModificationDateKey,
                                                                      .creationDateKey])
             guard fileAttributes.isRegularFile! else {
                 return nil
@@ -82,7 +81,7 @@ public struct SyncMetadata: CustomStringConvertible, Equatable {
             size = fileAttributes.fileSize ?? 0
             mtime = Int64((fileAttributes.contentModificationDate?.timeIntervalSince1970 ?? 0.0) * 1000)
             ctime = Int64((fileAttributes.creationDate?.timeIntervalSince1970 ?? 0.0) * 1000)
-            
+
             // incremental MD5 checksum
             let bufferSize = 512 * 1024
             let file = try FileHandle(forReadingFrom: fileURL)
@@ -99,14 +98,14 @@ public struct SyncMetadata: CustomStringConvertible, Equatable {
                     return false // eof
                 }
             }) {}
-            
+
             let computed = ctx.finalize()
             md5 = computed.map { String(format: "%02hhx", $0) }.joined()
         } catch {
             return nil
         }
     }
-    
+
     public var description: String {
         return "SyncMetadata(md5=\(md5), size=\(size), mtime=\(mtime))"
     }
@@ -119,18 +118,18 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
     override public func load() {
         print("debug FileSync iOS plugin loaded!")
     }
-    
+
     // NOTE: for debug, or an activity indicator
     public func debugNotification(_ message: [String: Any]) {
         self.notifyListeners("debug", data: message)
     }
-    
+
     @objc func keygen(_ call: CAPPluginCall) {
         let (secretKey, publicKey) = AgeEncryption.keygen()
         call.resolve(["secretKey": secretKey,
                       "publicKey": publicKey])
     }
-    
+
     @objc func setKey(_ call: CAPPluginCall) {
         let secretKey = call.getString("secretKey")
         let publicKey = call.getString("publicKey")
@@ -147,16 +146,16 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
         ENCRYPTION_SECRET_KEY = secretKey
         ENCRYPTION_PUBLIC_KEY = publicKey
         FNAME_ENCRYPTION_KEY = AgeEncryption.toRawX25519Key(secretKey)
-        
+
     }
-    
+
     @objc func setEnv(_ call: CAPPluginCall) {
         guard let env = call.getString("env") else {
             call.reject("required parameter: env")
             return
         }
         self.setKey(call)
-        
+
         switch env {
         case "production", "product", "prod":
             URL_BASE = URL(string: "https://api.logseq.com/file-sync/")!
@@ -170,11 +169,11 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
             call.reject("invalid env: \(env)")
             return
         }
-        
+
         self.debugNotification(["event": "setenv:\(env)"])
         call.resolve(["ok": true])
     }
-    
+
     @objc func encryptFnames(_ call: CAPPluginCall) {
         guard fnameEncryptionEnabled() else {
             call.reject("fname encryption key not set")
@@ -184,7 +183,7 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
             call.reject("required parameters: filePaths")
             return
         }
-        
+
         let nFiles = fnames.count
         fnames = fnames.compactMap { $0.removingPercentEncoding!.fnameEncrypt(rawKey: FNAME_ENCRYPTION_KEY!) }
         if fnames.count != nFiles {
@@ -192,7 +191,7 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
         }
         call.resolve(["value": fnames])
     }
-    
+
     @objc func decryptFnames(_ call: CAPPluginCall) {
         guard fnameEncryptionEnabled() else {
             call.reject("fname encryption key not set")
@@ -209,13 +208,13 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
         }
         call.resolve(["value": fnames])
     }
-    
+
     @objc func encryptWithPassphrase(_ call: CAPPluginCall) {
         guard let passphrase = call.getString("passphrase"),
               let content = call.getString("content") else {
-                  call.reject("required parameters: passphrase, content")
-                  return
-              }
+            call.reject("required parameters: passphrase, content")
+            return
+        }
         guard let plaintext = content.data(using: .utf8) else {
             call.reject("cannot decode ciphertext with utf8")
             return
@@ -230,14 +229,13 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
             self.bridge?.releaseCall(call)
         }
     }
-    
-    
+
     @objc func decryptWithPassphrase(_ call: CAPPluginCall) {
         guard let passphrase = call.getString("passphrase"),
               let content = call.getString("content") else {
-                  call.reject("required parameters: passphrase, content")
-                  return
-              }
+            call.reject("required parameters: passphrase, content")
+            return
+        }
         guard let ciphertext = content.data(using: .utf8) else {
             call.reject("cannot decode ciphertext with utf8")
             return
@@ -252,19 +250,19 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
             self.bridge?.releaseCall(call)
         }
     }
-    
+
     @objc func getLocalFilesMeta(_ call: CAPPluginCall) {
         // filePaths are url encoded
         guard let basePath = call.getString("basePath"),
               let filePaths = call.getArray("filePaths") as? [String] else {
-                  call.reject("required paremeters: basePath, filePaths")
-                  return
-              }
+            call.reject("required paremeters: basePath, filePaths")
+            return
+        }
         guard let baseURL = URL(string: basePath) else {
             call.reject("invalid basePath")
             return
         }
-        
+
         var fileMetadataDict: [String: [String: Any]] = [:]
         for percentFilePath in filePaths {
             let filePath = percentFilePath.removingPercentEncoding!
@@ -276,24 +274,24 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
                 if fnameEncryptionEnabled() {
                     metaObj["encryptedFname"] = filePath.fnameEncrypt(rawKey: FNAME_ENCRYPTION_KEY!)
                 }
-                
+
                 fileMetadataDict[percentFilePath] = metaObj
             }
         }
-        
+
         call.resolve(["result": fileMetadataDict])
     }
-    
+
     @objc func getLocalAllFilesMeta(_ call: CAPPluginCall) {
         guard let basePath = call.getString("basePath"),
               let baseURL = URL(string: basePath) else {
-                  call.reject("invalid basePath")
-                  return
-              }
-        
+            call.reject("invalid basePath")
+            return
+        }
+
         var fileMetadataDict: [String: [String: Any]] = [:]
         if let enumerator = FileManager.default.enumerator(at: baseURL, includingPropertiesForKeys: [.isRegularFileKey], options: [.skipsPackageDescendants, .skipsHiddenFiles]) {
-            
+
             for case let fileURL as URL in enumerator {
                 if !fileURL.isSkipSync() {
                     if let meta = SyncMetadata(of: fileURL) {
@@ -313,14 +311,13 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
         }
         call.resolve(["result": fileMetadataDict])
     }
-    
-    
+
     @objc func renameLocalFile(_ call: CAPPluginCall) {
         guard let basePath = call.getString("basePath"),
               let baseURL = URL(string: basePath) else {
-                  call.reject("invalid basePath")
-                  return
-              }
+            call.reject("invalid basePath")
+            return
+        }
         guard let from = call.getString("from") else {
             call.reject("invalid from file")
             return
@@ -329,10 +326,10 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
             call.reject("invalid to file")
             return
         }
-        
+
         let fromUrl = baseURL.appendingPathComponent(from.removingPercentEncoding!)
         let toUrl = baseURL.appendingPathComponent(to.removingPercentEncoding!)
-        
+
         do {
             try FileManager.default.moveItem(at: fromUrl, to: toUrl)
         } catch {
@@ -340,33 +337,33 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
             return
         }
         call.resolve(["ok": true])
-        
+
     }
-    
+
     @objc func deleteLocalFiles(_ call: CAPPluginCall) {
         guard let baseURL = call.getString("basePath").flatMap({path in URL(string: path)}),
               let filePaths = call.getArray("filePaths") as? [String] else {
-                  call.reject("required paremeters: basePath, filePaths")
-                  return
-              }
-        
+            call.reject("required paremeters: basePath, filePaths")
+            return
+        }
+
         for filePath in filePaths {
             let fileUrl = baseURL.appendingPathComponent(filePath.removingPercentEncoding!)
             try? FileManager.default.removeItem(at: fileUrl) // ignore any delete errors
         }
         call.resolve(["ok": true])
     }
-    
+
     /// remote -> local
     @objc func updateLocalFiles(_ call: CAPPluginCall) {
         guard let baseURL = call.getString("basePath").flatMap({path in URL(string: path)}),
               let filePaths = call.getArray("filePaths") as? [String],
               let graphUUID = call.getString("graphUUID") ,
               let token = call.getString("token") else {
-                  call.reject("required paremeters: basePath, filePaths, graphUUID, token")
-                  return
-              }
-        
+            call.reject("required paremeters: basePath, filePaths, graphUUID, token")
+            return
+        }
+
         // [encrypted-fname: original-fname]
         var encryptedFilePathDict: [String: String] = [:]
         if fnameEncryptionEnabled() {
@@ -380,12 +377,12 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
         } else {
             encryptedFilePathDict = Dictionary(uniqueKeysWithValues: filePaths.map { ($0, $0) })
         }
-        
+
         let encryptedFilePaths = Array(encryptedFilePathDict.keys)
-        
+
         let client = SyncClient(token: token, graphUUID: graphUUID)
         client.delegate = self // receives notification
-        
+
         client.getFiles(at: encryptedFilePaths) {  (fileURLs, error) in
             guard error == nil else {
                 print("debug getFiles error \(String(describing: error))")
@@ -395,22 +392,22 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
             }
             // handle multiple completionHandlers
             let group = DispatchGroup()
-            
+
             var downloaded: [String] = []
-            
+
             for (encryptedFilePath, remoteFileURL) in fileURLs {
                 group.enter()
-                
+
                 let filePath = encryptedFilePathDict[encryptedFilePath]!
                 // NOTE: fileURLs from getFiles API is percent-encoded
                 let localFileURL = baseURL.appendingPathComponent(filePath.removingPercentEncoding!)
-                
+
                 let progressHandler = {(fraction: Double) in
                     self.debugNotification(["event": "download:progress",
                                             "data": ["file": filePath,
                                                      "fraction": fraction]])
                 }
-                
+
                 client.download(url: remoteFileURL, progressHandler: progressHandler) {result in
                     switch result {
                     case .failure(let error):
@@ -433,7 +430,7 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
                             print("debug download \(error) in \(filePath)")
                         }
                     }
-                    
+
                     group.leave()
                 }
             }
@@ -443,18 +440,18 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
             }
         }
     }
-    
+
     @objc func updateLocalVersionFiles(_ call: CAPPluginCall) {
         guard let baseURL = call.getString("basePath").flatMap({path in URL(string: path)}),
               let filePaths = call.getArray("filePaths") as? [String],
               let graphUUID = call.getString("graphUUID") ,
               let token = call.getString("token") else {
-                  call.reject("required paremeters: basePath, filePaths, graphUUID, token")
-                  return
-              }
+            call.reject("required paremeters: basePath, filePaths, graphUUID, token")
+            return
+        }
         let client = SyncClient(token: token, graphUUID: graphUUID)
         client.delegate = self // receives notification
-        
+
         client.getVersionFiles(at: filePaths) {  (fileURLDict, error) in
             if let error = error {
                 print("debug getVersionFiles error \(error)")
@@ -462,17 +459,17 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
             } else {
                 // handle multiple completionHandlers
                 let group = DispatchGroup()
-                
+
                 var downloaded: [String] = []
                 for (filePath, remoteFileURL) in fileURLDict {
                     group.enter()
-                    
+
                     // NOTE: fileURLs from getFiles API is percent-encoded
                     let localFileURL = baseURL.appendingPathComponent("logseq/version-files/").appendingPathComponent(filePath.removingPercentEncoding!)
                     // empty progress handler
-                    let progressHandler = {(fraction: Double) in
+                    let progressHandler = {(_: Double) in
                     }
-                    
+
                     client.download(url: remoteFileURL, progressHandler: progressHandler) {result in
                         switch result {
                         case .failure(let error):
@@ -497,25 +494,25 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
                 group.notify(queue: .main) {
                     call.resolve(["ok": true, "data": downloaded])
                 }
-                
+
             }
         }
     }
-    
+
     // filePaths: Encrypted file paths
     @objc func deleteRemoteFiles(_ call: CAPPluginCall) {
         guard var filePaths = call.getArray("filePaths") as? [String],
               let graphUUID = call.getString("graphUUID"),
               let token = call.getString("token"),
               let txid = call.getInt("txid") else {
-                  call.reject("required paremeters: filePaths, graphUUID, token, txid")
-                  return
-              }
+            call.reject("required paremeters: filePaths, graphUUID, token, txid")
+            return
+        }
         guard !filePaths.isEmpty else {
             call.reject("empty filePaths")
             return
         }
-        
+
         let nFiles = filePaths.count
         if fnameEncryptionEnabled() {
             filePaths = filePaths.compactMap { $0.removingPercentEncoding!.fnameEncrypt(rawKey: FNAME_ENCRYPTION_KEY!) }
@@ -523,7 +520,7 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
         if filePaths.count != nFiles {
             call.reject("cannot encrypt all file names")
         }
-        
+
         let client = SyncClient(token: token, graphUUID: graphUUID, txid: txid)
         client.deleteFiles(filePaths) { txid, error in
             guard error == nil else {
@@ -537,7 +534,7 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
             call.resolve(["ok": true, "txid": txid])
         }
     }
-    
+
     /// local -> remote
     @objc func updateRemoteFiles(_ call: CAPPluginCall) {
         guard let baseURL = call.getString("basePath").flatMap({path in URL(string: path)}),
@@ -545,33 +542,33 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
               let graphUUID = call.getString("graphUUID"),
               let token = call.getString("token"),
               let txid = call.getInt("txid") else {
-                  call.reject("required paremeters: basePath, filePaths, graphUUID, token, txid")
-                  return
-              }
+            call.reject("required paremeters: basePath, filePaths, graphUUID, token, txid")
+            return
+        }
         let fnameEncryption = call.getBool("fnameEncryption") ?? false // default to false
-        
+
         guard !filePaths.isEmpty else {
             return call.reject("empty filePaths")
         }
-        
+
         let client = SyncClient(token: token, graphUUID: graphUUID, txid: txid)
         client.delegate = self
-        
+
         // 1. refresh_temp_credential
-        client.getTempCredential() { (credentials, error) in
+        client.getTempCredential { (credentials, error) in
             guard error == nil else {
                 self.debugNotification(["event": "upload:error", "data": ["message": "error while refreshing credential: \(error!)"]])
                 call.reject("error(getTempCredential): \(error!)")
                 return
             }
-            
+
             var files: [String: URL] = [:]
             for filePath in filePaths {
                 // NOTE: filePath from js may contain spaces
                 let fileURL = baseURL.appendingPathComponent(filePath.removingPercentEncoding!)
                 files[filePath] = fileURL
             }
-            
+
             // 2. upload_temp_file
             let progressHandler = {(filePath: String, fraction: Double) in
                 self.debugNotification(["event": "upload:progress",
@@ -590,10 +587,10 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
                     call.reject("no file to update")
                     return
                 }
-                
+
                 // encrypted-file-name: (file-key, md5)
                 var uploadedFileKeyMd5Dict: [String: [String]] = [:]
-                
+
                 if fnameEncryptionEnabled() && fnameEncryption {
                     for (filePath, fileKey) in uploadedFileKeyDict {
                         guard let encryptedFilePath = filePath.removingPercentEncoding!.fnameEncrypt(rawKey: FNAME_ENCRYPTION_KEY!) else {
@@ -623,5 +620,5 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
             }
         }
     }
-    
+
 }
