@@ -9,6 +9,9 @@ end
 
 target 'Plugin' do
   capacitor_pods
+  # deps
+  pod 'AWSS3'
+  pod 'AgeEncryption', :podspec => './AgeEncryption.podspec'
 end
 
 target 'PluginTests' do

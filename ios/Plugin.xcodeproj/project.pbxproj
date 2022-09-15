@@ -9,13 +9,16 @@
 /* Begin PBXBuildFile section */
 		03FC29A292ACC40490383A1F /* Pods_Plugin.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3B2A61DA5A1F2DD4F959604D /* Pods_Plugin.framework */; };
 		20C0B05DCFC8E3958A738AF2 /* Pods_PluginTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F6753A823D3815DB436415E3 /* Pods_PluginTests.framework */; };
-		2F98D68224C9AAE500613A4C /* FileSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F98D68124C9AAE400613A4C /* FileSync.swift */; };
 		50ADFF92201F53D600D50D53 /* Plugin.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 50ADFF88201F53D600D50D53 /* Plugin.framework */; };
 		50ADFF97201F53D600D50D53 /* FileSyncTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50ADFF96201F53D600D50D53 /* FileSyncTests.swift */; };
 		50ADFF99201F53D600D50D53 /* FileSyncPlugin.h in Headers */ = {isa = PBXBuildFile; fileRef = 50ADFF8B201F53D600D50D53 /* FileSyncPlugin.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		50ADFFA42020D75100D50D53 /* Capacitor.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 50ADFFA52020D75100D50D53 /* Capacitor.framework */; };
 		50ADFFA82020EE4F00D50D53 /* FileSyncPlugin.m in Sources */ = {isa = PBXBuildFile; fileRef = 50ADFFA72020EE4F00D50D53 /* FileSyncPlugin.m */; };
 		50E1A94820377CB70090CE1A /* FileSyncPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50E1A94720377CB70090CE1A /* FileSyncPlugin.swift */; };
+		FE427B4628D3861900B27F61 /* AgeEncryption.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE427B4528D3861900B27F61 /* AgeEncryption.swift */; };
+		FE427B4828D3865500B27F61 /* Payload.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE427B4728D3865500B27F61 /* Payload.swift */; };
+		FE427B4A28D3867C00B27F61 /* SyncClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE427B4928D3867C00B27F61 /* SyncClient.swift */; };
+		FE427B4C28D3870B00B27F61 /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE427B4B28D3870B00B27F61 /* Extensions.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -29,7 +32,6 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		2F98D68124C9AAE400613A4C /* FileSync.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FileSync.swift; sourceTree = "<group>"; };
 		3B2A61DA5A1F2DD4F959604D /* Pods_Plugin.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Plugin.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		50ADFF88201F53D600D50D53 /* Plugin.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Plugin.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		50ADFF8B201F53D600D50D53 /* FileSyncPlugin.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FileSyncPlugin.h; sourceTree = "<group>"; };
@@ -45,6 +47,10 @@
 		96ED1B6440D6672E406C8D19 /* Pods-PluginTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-PluginTests.debug.xcconfig"; path = "Pods/Target Support Files/Pods-PluginTests/Pods-PluginTests.debug.xcconfig"; sourceTree = "<group>"; };
 		F65BB2953ECE002E1EF3E424 /* Pods-PluginTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-PluginTests.release.xcconfig"; path = "Pods/Target Support Files/Pods-PluginTests/Pods-PluginTests.release.xcconfig"; sourceTree = "<group>"; };
 		F6753A823D3815DB436415E3 /* Pods_PluginTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_PluginTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		FE427B4528D3861900B27F61 /* AgeEncryption.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgeEncryption.swift; sourceTree = "<group>"; };
+		FE427B4728D3865500B27F61 /* Payload.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Payload.swift; sourceTree = "<group>"; };
+		FE427B4928D3867C00B27F61 /* SyncClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncClient.swift; sourceTree = "<group>"; };
+		FE427B4B28D3870B00B27F61 /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -93,10 +99,13 @@
 			isa = PBXGroup;
 			children = (
 				50E1A94720377CB70090CE1A /* FileSyncPlugin.swift */,
-				2F98D68124C9AAE400613A4C /* FileSync.swift */,
 				50ADFF8B201F53D600D50D53 /* FileSyncPlugin.h */,
 				50ADFFA72020EE4F00D50D53 /* FileSyncPlugin.m */,
 				50ADFF8C201F53D600D50D53 /* Info.plist */,
+				FE427B4528D3861900B27F61 /* AgeEncryption.swift */,
+				FE427B4728D3865500B27F61 /* Payload.swift */,
+				FE427B4928D3867C00B27F61 /* SyncClient.swift */,
+				FE427B4B28D3870B00B27F61 /* Extensions.swift */,
 			);
 			path = Plugin;
 			sourceTree = "<group>";
@@ -270,11 +279,15 @@
 				"${PODS_ROOT}/Target Support Files/Pods-PluginTests/Pods-PluginTests-frameworks.sh",
 				"${BUILT_PRODUCTS_DIR}/Capacitor/Capacitor.framework",
 				"${BUILT_PRODUCTS_DIR}/CapacitorCordova/Cordova.framework",
+				"${BUILT_PRODUCTS_DIR}/AWSCore/AWSCore.framework",
+				"${BUILT_PRODUCTS_DIR}/AWSS3/AWSS3.framework",
 			);
 			name = "[CP] Embed Pods Frameworks";
 			outputPaths = (
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Capacitor.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Cordova.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/AWSCore.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/AWSS3.framework",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -307,8 +320,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				50E1A94820377CB70090CE1A /* FileSyncPlugin.swift in Sources */,
-				2F98D68224C9AAE500613A4C /* FileSync.swift in Sources */,
+				FE427B4C28D3870B00B27F61 /* Extensions.swift in Sources */,
+				FE427B4628D3861900B27F61 /* AgeEncryption.swift in Sources */,
+				FE427B4828D3865500B27F61 /* Payload.swift in Sources */,
 				50ADFFA82020EE4F00D50D53 /* FileSyncPlugin.m in Sources */,
+				FE427B4A28D3867C00B27F61 /* SyncClient.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
