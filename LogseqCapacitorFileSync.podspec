@@ -15,6 +15,6 @@ Pod::Spec.new do |s|
   s.static_framework = true
   s.dependency 'Capacitor'
   s.dependency 'AWSS3'
-  s.dependency 'AgeEncryption', '1.0.6'
+  s.dependency 'AgeEncryption', '~> 1.0.6'
   s.swift_version = '5.1'
 end
