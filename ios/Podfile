@@ -1,3 +1,6 @@
+# pod specs for AgeEncryption
+source 'https://github.com/andelf/Specs.git'
+
 platform :ios, '13.0'
 
 def capacitor_pods
@@ -11,7 +14,7 @@ target 'Plugin' do
   capacitor_pods
   # deps
   pod 'AWSS3'
-  pod 'AgeEncryption', :podspec => './AgeEncryption.podspec'
+  pod 'AgeEncryption', '1.0.6'
 end
 
 target 'PluginTests' do
