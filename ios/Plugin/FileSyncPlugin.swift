@@ -74,7 +74,7 @@ public struct SyncMetadata: CustomStringConvertible, Equatable {
     public init?(of fileURL: URL) {
         do {
             let fileAttributes = try fileURL.resourceValues(forKeys: [.isRegularFileKey, .fileSizeKey, .contentModificationDateKey,
-                                                                     .creationDateKey])
+                                                                      .creationDateKey])
             guard fileAttributes.isRegularFile! else {
                 return nil
             }
