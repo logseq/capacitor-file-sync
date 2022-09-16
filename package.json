@@ -1,6 +1,6 @@
 {
   "name": "@logseq/capacitor-file-sync",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "File sync for Logseq",
   "main": "dist/plugin.cjs.js",
   "module": "dist/esm/index.js",
@@ -11,6 +11,7 @@
     "android/build.gradle",
     "dist/",
     "ios/Plugin/",
+    "ios/Podfile",
     "LogseqCapacitorFileSync.podspec"
   ],
   "author": "Logseq Devs <dev@logseq.com>",
