@@ -10,6 +10,7 @@ import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 import com.logseq.sync.FileMeta;
 import com.logseq.sync.RSFileSync;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import org.json.JSONException;
 
@@ -336,11 +337,31 @@ public class FileSyncPlugin extends Plugin {
 
     @PluginMethod
     public void encryptWithPassphrase(PluginCall call) {
-        call.reject("unimplemented");
+        String passphrase = call.getString("passphrase");
+        String content = call.getString("content");
+        byte[] encrypted = RSFileSync.ageEncryptWithPassphrase(passphrase, content.getBytes(StandardCharsets.UTF_8));
+        if (encrypted == null) {
+            call.reject(RSFileSync.getLastError());
+            return;
+        }
+        String data = new String(encrypted, StandardCharsets.UTF_8);
+        JSObject ret = new JSObject();
+        ret.put("data", data);
+        call.resolve(ret);
     }
 
     @PluginMethod
     public void decryptWithPassphrase(PluginCall call) {
-        call.reject("unimplemented");
+        String passphrase = call.getString("passphrase");
+        String content = call.getString("content");
+        byte[] encrypted = RSFileSync.ageDecryptWithPassphrase(passphrase, content.getBytes(StandardCharsets.UTF_8));
+        if (encrypted == null) {
+            call.reject(RSFileSync.getLastError());
+            return;
+        }
+        String data = new String(encrypted, StandardCharsets.UTF_8);
+        JSObject ret = new JSObject();
+        ret.put("data", data);
+        call.resolve(ret);
     }
 }

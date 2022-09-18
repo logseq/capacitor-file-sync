@@ -34,4 +34,8 @@ public class RSFileSync {
     public static native long deleteRemoteFiles(List<String> filePaths, String graphUUID, String token, long txid);
 
     public static native long updateRemoteFiles(String basePath, List<String> filePaths, String graphUUID, String token, long txid);
+
+    public static native byte[] ageDecryptWithPassphrase(String passphrase, byte[] buffer);
+
+    public static native byte[] ageEncryptWithPassphrase(String passphrase, byte[] buffer);
 }
