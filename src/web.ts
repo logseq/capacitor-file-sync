@@ -7,10 +7,8 @@ export class FileSyncWeb extends WebPlugin implements FileSyncPlugin {
   keygen(): Promise<{ secretKey: string; publicKey: string }> {
     throw new Error('Method not implemented.');
   }
-  setKey(_options: { secretKey: string; publicKey: string }): Promise<void> {
-    throw new Error('Method not implemented.');
-  }
   setEnv(_options: {
+    graphUUID: string;
     env: string;
     secretKey: string;
     publicKey: string;
@@ -18,60 +16,65 @@ export class FileSyncWeb extends WebPlugin implements FileSyncPlugin {
     throw new Error('Method not implemented.');
   }
   encryptFnames(_options: {
+    graphUUID: string;
     filePaths: string[];
   }): Promise<{ value: string[] }> {
     throw new Error('Method not implemented.');
   }
   decryptFnames(_options: {
+    graphUUID: string;
     filePaths: string[];
   }): Promise<{ value: string[] }> {
     throw new Error('Method not implemented.');
   }
   getLocalFilesMeta(_options: {
+    graphUUID: string;
     basePath: string;
     filePaths: string[];
   }): Promise<{ result: any[] }> {
     throw new Error('Method not implemented.');
   }
   getLocalAllFilesMeta(_options: {
+    graphUUID: string;
     basePath: string;
   }): Promise<{ result: any[] }> {
     throw new Error('Method not implemented.');
   }
   deleteLocalFiles(_options: {
+    graphUUID: string;
     basePath: string;
     filePaths: string[];
   }): Promise<void> {
     throw new Error('Method not implemented.');
   }
   updateLocalFiles(_options: {
+    graphUUID: string;
     basePath: string;
     filePaths: string[];
-    graphUUID: string;
     token: string;
   }): Promise<void> {
     throw new Error('Method not implemented.');
   }
   updateLocalVersionFiles(_options: {
+    graphUUID: string;
     basePath: string;
     filePaths: string[];
-    graphUUID: string;
     token: string;
   }): Promise<void> {
     throw new Error('Method not implemented.');
   }
   deleteRemoteFiles(_options: {
-    filePaths: string[];
     graphUUID: string;
+    filePaths: string[];
     token: string;
     txid: number;
   }): Promise<{ txid: number }> {
     throw new Error('Method not implemented.');
   }
   updateRemoteFiles(_options: {
+    graphUUID: string;
     basePath: string;
     filePaths: string[];
-    graphUUID: string;
     token: string;
     txid: number;
   }): Promise<{ txid: number }> {
