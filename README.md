@@ -14,7 +14,6 @@ npx cap sync
 <docgen-index>
 
 * [`keygen()`](#keygen)
-* [`setKey(...)`](#setkey)
 * [`setEnv(...)`](#setenv)
 * [`encryptFnames(...)`](#encryptfnames)
 * [`decryptFnames(...)`](#decryptfnames)
@@ -44,28 +43,15 @@ keygen() => Promise<{ secretKey: string; publicKey: string; }>
 --------------------
 
 
-### setKey(...)
-
-```typescript
-setKey(options: { secretKey: string; publicKey: string; }) => Promise<void>
-```
-
-| Param         | Type                                                   |
-| ------------- | ------------------------------------------------------ |
-| **`options`** | <code>{ secretKey: string; publicKey: string; }</code> |
-
---------------------
-
-
 ### setEnv(...)
 
 ```typescript
-setEnv(options: { env: string; secretKey: string; publicKey: string; }) => Promise<void>
+setEnv(options: { graphUUID: string; env: string; secretKey: string; publicKey: string; }) => Promise<void>
 ```
 
-| Param         | Type                                                                |
-| ------------- | ------------------------------------------------------------------- |
-| **`options`** | <code>{ env: string; secretKey: string; publicKey: string; }</code> |
+| Param         | Type                                                                                   |
+| ------------- | -------------------------------------------------------------------------------------- |
+| **`options`** | <code>{ graphUUID: string; env: string; secretKey: string; publicKey: string; }</code> |
 
 --------------------
 
@@ -73,12 +59,12 @@ setEnv(options: { env: string; secretKey: string; publicKey: string; }) => Promi
 ### encryptFnames(...)
 
 ```typescript
-encryptFnames(options: { filePaths: string[]; }) => Promise<{ value: string[]; }>
+encryptFnames(options: { graphUUID: string; filePaths: string[]; }) => Promise<{ value: string[]; }>
 ```
 
-| Param         | Type                                  |
-| ------------- | ------------------------------------- |
-| **`options`** | <code>{ filePaths: string[]; }</code> |
+| Param         | Type                                                     |
+| ------------- | -------------------------------------------------------- |
+| **`options`** | <code>{ graphUUID: string; filePaths: string[]; }</code> |
 
 **Returns:** <code>Promise&lt;{ value: string[]; }&gt;</code>
 
@@ -88,12 +74,12 @@ encryptFnames(options: { filePaths: string[]; }) => Promise<{ value: string[]; }
 ### decryptFnames(...)
 
 ```typescript
-decryptFnames(options: { filePaths: string[]; }) => Promise<{ value: string[]; }>
+decryptFnames(options: { graphUUID: string; filePaths: string[]; }) => Promise<{ value: string[]; }>
 ```
 
-| Param         | Type                                  |
-| ------------- | ------------------------------------- |
-| **`options`** | <code>{ filePaths: string[]; }</code> |
+| Param         | Type                                                     |
+| ------------- | -------------------------------------------------------- |
+| **`options`** | <code>{ graphUUID: string; filePaths: string[]; }</code> |
 
 **Returns:** <code>Promise&lt;{ value: string[]; }&gt;</code>
 
@@ -103,12 +89,12 @@ decryptFnames(options: { filePaths: string[]; }) => Promise<{ value: string[]; }
 ### getLocalFilesMeta(...)
 
 ```typescript
-getLocalFilesMeta(options: { basePath: string; filePaths: string[]; }) => Promise<{ result: any[]; }>
+getLocalFilesMeta(options: { graphUUID: string; basePath: string; filePaths: string[]; }) => Promise<{ result: any[]; }>
 ```
 
-| Param         | Type                                                    |
-| ------------- | ------------------------------------------------------- |
-| **`options`** | <code>{ basePath: string; filePaths: string[]; }</code> |
+| Param         | Type                                                                       |
+| ------------- | -------------------------------------------------------------------------- |
+| **`options`** | <code>{ graphUUID: string; basePath: string; filePaths: string[]; }</code> |
 
 **Returns:** <code>Promise&lt;{ result: any[]; }&gt;</code>
 
@@ -118,12 +104,12 @@ getLocalFilesMeta(options: { basePath: string; filePaths: string[]; }) => Promis
 ### getLocalAllFilesMeta(...)
 
 ```typescript
-getLocalAllFilesMeta(options: { basePath: string; }) => Promise<{ result: any[]; }>
+getLocalAllFilesMeta(options: { graphUUID: string; basePath: string; }) => Promise<{ result: any[]; }>
 ```
 
-| Param         | Type                               |
-| ------------- | ---------------------------------- |
-| **`options`** | <code>{ basePath: string; }</code> |
+| Param         | Type                                                  |
+| ------------- | ----------------------------------------------------- |
+| **`options`** | <code>{ graphUUID: string; basePath: string; }</code> |
 
 **Returns:** <code>Promise&lt;{ result: any[]; }&gt;</code>
 
@@ -133,12 +119,12 @@ getLocalAllFilesMeta(options: { basePath: string; }) => Promise<{ result: any[];
 ### deleteLocalFiles(...)
 
 ```typescript
-deleteLocalFiles(options: { basePath: string; filePaths: string[]; }) => Promise<void>
+deleteLocalFiles(options: { graphUUID: string; basePath: string; filePaths: string[]; }) => Promise<void>
 ```
 
-| Param         | Type                                                    |
-| ------------- | ------------------------------------------------------- |
-| **`options`** | <code>{ basePath: string; filePaths: string[]; }</code> |
+| Param         | Type                                                                       |
+| ------------- | -------------------------------------------------------------------------- |
+| **`options`** | <code>{ graphUUID: string; basePath: string; filePaths: string[]; }</code> |
 
 --------------------
 
@@ -146,12 +132,12 @@ deleteLocalFiles(options: { basePath: string; filePaths: string[]; }) => Promise
 ### updateLocalFiles(...)
 
 ```typescript
-updateLocalFiles(options: { basePath: string; filePaths: string[]; graphUUID: string; token: string; }) => Promise<void>
+updateLocalFiles(options: { graphUUID: string; basePath: string; filePaths: string[]; token: string; }) => Promise<void>
 ```
 
 | Param         | Type                                                                                      |
 | ------------- | ----------------------------------------------------------------------------------------- |
-| **`options`** | <code>{ basePath: string; filePaths: string[]; graphUUID: string; token: string; }</code> |
+| **`options`** | <code>{ graphUUID: string; basePath: string; filePaths: string[]; token: string; }</code> |
 
 --------------------
 
@@ -159,12 +145,12 @@ updateLocalFiles(options: { basePath: string; filePaths: string[]; graphUUID: st
 ### updateLocalVersionFiles(...)
 
 ```typescript
-updateLocalVersionFiles(options: { basePath: string; filePaths: string[]; graphUUID: string; token: string; }) => Promise<void>
+updateLocalVersionFiles(options: { graphUUID: string; basePath: string; filePaths: string[]; token: string; }) => Promise<void>
 ```
 
 | Param         | Type                                                                                      |
 | ------------- | ----------------------------------------------------------------------------------------- |
-| **`options`** | <code>{ basePath: string; filePaths: string[]; graphUUID: string; token: string; }</code> |
+| **`options`** | <code>{ graphUUID: string; basePath: string; filePaths: string[]; token: string; }</code> |
 
 --------------------
 
@@ -172,12 +158,12 @@ updateLocalVersionFiles(options: { basePath: string; filePaths: string[]; graphU
 ### deleteRemoteFiles(...)
 
 ```typescript
-deleteRemoteFiles(options: { filePaths: string[]; graphUUID: string; token: string; txid: number; }) => Promise<{ txid: number; }>
+deleteRemoteFiles(options: { graphUUID: string; filePaths: string[]; token: string; txid: number; }) => Promise<{ txid: number; }>
 ```
 
 | Param         | Type                                                                                  |
 | ------------- | ------------------------------------------------------------------------------------- |
-| **`options`** | <code>{ filePaths: string[]; graphUUID: string; token: string; txid: number; }</code> |
+| **`options`** | <code>{ graphUUID: string; filePaths: string[]; token: string; txid: number; }</code> |
 
 **Returns:** <code>Promise&lt;{ txid: number; }&gt;</code>
 
@@ -187,12 +173,12 @@ deleteRemoteFiles(options: { filePaths: string[]; graphUUID: string; token: stri
 ### updateRemoteFiles(...)
 
 ```typescript
-updateRemoteFiles(options: { basePath: string; filePaths: string[]; graphUUID: string; token: string; txid: number; }) => Promise<{ txid: number; }>
+updateRemoteFiles(options: { graphUUID: string; basePath: string; filePaths: string[]; token: string; txid: number; }) => Promise<{ txid: number; }>
 ```
 
 | Param         | Type                                                                                                    |
 | ------------- | ------------------------------------------------------------------------------------------------------- |
-| **`options`** | <code>{ basePath: string; filePaths: string[]; graphUUID: string; token: string; txid: number; }</code> |
+| **`options`** | <code>{ graphUUID: string; basePath: string; filePaths: string[]; token: string; txid: number; }</code> |
 
 **Returns:** <code>Promise&lt;{ txid: number; }&gt;</code>
 
