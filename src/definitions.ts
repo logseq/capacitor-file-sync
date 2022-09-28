@@ -73,4 +73,6 @@ export interface FileSyncPlugin {
     passphrase: string;
     content: string;
   }): Promise<{ data: string }>;
+
+  cancelAllRequest(options: unknown): Promise<void>;
 }

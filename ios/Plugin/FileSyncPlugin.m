@@ -18,4 +18,5 @@ CAP_PLUGIN(FileSyncPlugin, "FileSync",
            CAP_PLUGIN_METHOD(decryptWithPassphrase, CAPPluginReturnPromise);
            CAP_PLUGIN_METHOD(encryptWithPassphrase, CAPPluginReturnPromise);
            CAP_PLUGIN_METHOD(updateLocalVersionFiles, CAPPluginReturnPromise);
+           CAP_PLUGIN_METHOD(cancelAllRequest, CAPPluginReturnPromise);
 )

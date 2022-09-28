@@ -115,8 +115,13 @@ public struct SyncMetadata: CustomStringConvertible, Equatable {
 
 @objc(FileSyncPlugin)
 public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
+    public var client: SyncClient!
+
     override public func load() {
         print("debug FileSync iOS plugin loaded!")
+
+        client = SyncClient()
+        client.delegate = self
     }
 
     // NOTE: for debug, or an activity indicator
@@ -270,10 +275,9 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
             if let meta = SyncMetadata(of: url) {
                 var metaObj: [String: Any] = ["md5": meta.md5,
                                               "size": meta.size,
+                                              "ctime": meta.ctime,
                                               "mtime": meta.mtime]
-                if fnameEncryptionEnabled() {
-                    metaObj["encryptedFname"] = filePath.fnameEncrypt(rawKey: FNAME_ENCRYPTION_KEY!)
-                }
+                metaObj["encryptedFname"] = filePath.fnameEncrypt(rawKey: FNAME_ENCRYPTION_KEY!)
 
                 fileMetadataDict[percentFilePath] = metaObj
             }
@@ -298,10 +302,10 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
                         let filePath = fileURL.relativePath(from: baseURL)!
                         var metaObj: [String: Any] = ["md5": meta.md5,
                                                       "size": meta.size,
+                                                      "ctime": meta.ctime,
                                                       "mtime": meta.mtime]
-                        if fnameEncryptionEnabled() {
-                            metaObj["encryptedFname"] = filePath.fnameEncrypt(rawKey: FNAME_ENCRYPTION_KEY!)
-                        }
+                        metaObj["encryptedFname"] = filePath.fnameEncrypt(rawKey: FNAME_ENCRYPTION_KEY!)
+
                         fileMetadataDict[filePath.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed)!] = metaObj
                     }
                 } else if fileURL.isICloudPlaceholder() {
@@ -358,7 +362,7 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
     @objc func updateLocalFiles(_ call: CAPPluginCall) {
         guard let baseURL = call.getString("basePath").flatMap({path in URL(string: path)}),
               let filePaths = call.getArray("filePaths") as? [String],
-              let graphUUID = call.getString("graphUUID") ,
+              let graphUUID = call.getString("graphUUID"),
               let token = call.getString("token") else {
             call.reject("required paremeters: basePath, filePaths, graphUUID, token")
             return
@@ -380,10 +384,8 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
 
         let encryptedFilePaths = Array(encryptedFilePathDict.keys)
 
-        let client = SyncClient(token: token, graphUUID: graphUUID)
-        client.delegate = self // receives notification
-
-        client.getFiles(at: encryptedFilePaths) {  (fileURLs, error) in
+        self.client.set(token: token, graphUUID: graphUUID)
+        self.client.getFiles(at: encryptedFilePaths) { (fileURLs, error) in
             guard error == nil else {
                 print("debug getFiles error \(String(describing: error))")
                 self.debugNotification(["event": "download:error", "data": ["message": "error while getting files \(filePaths)"]])
@@ -402,13 +404,17 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
                 // NOTE: fileURLs from getFiles API is percent-encoded
                 let localFileURL = baseURL.appendingPathComponent(filePath.removingPercentEncoding!)
 
-                let progressHandler = {(fraction: Double) in
+                let progressHandler = {(progress: Progress) in
                     self.debugNotification(["event": "download:progress",
                                             "data": ["file": filePath,
-                                                     "fraction": fraction]])
+                                                     "graphUUID": graphUUID,
+                                                     "type": "download",
+                                                     "progress": progress.completedUnitCount,
+                                                     "total": progress.totalUnitCount,
+                                                     "percent": Int(progress.fractionCompleted * 100)]])
                 }
 
-                client.download(url: remoteFileURL, progressHandler: progressHandler) {result in
+                self.client.download(url: remoteFileURL, progressHandler: progressHandler) {result in
                     switch result {
                     case .failure(let error):
                         self.debugNotification(["event": "download:error", "data": ["message": "error while downloading \(filePath): \(error)"]])
@@ -444,15 +450,13 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
     @objc func updateLocalVersionFiles(_ call: CAPPluginCall) {
         guard let baseURL = call.getString("basePath").flatMap({path in URL(string: path)}),
               let filePaths = call.getArray("filePaths") as? [String],
-              let graphUUID = call.getString("graphUUID") ,
+              let graphUUID = call.getString("graphUUID"),
               let token = call.getString("token") else {
             call.reject("required paremeters: basePath, filePaths, graphUUID, token")
             return
         }
-        let client = SyncClient(token: token, graphUUID: graphUUID)
-        client.delegate = self // receives notification
-
-        client.getVersionFiles(at: filePaths) {  (fileURLDict, error) in
+        self.client.set(token: token, graphUUID: graphUUID)
+        self.client.getVersionFiles(at: filePaths) {  (fileURLDict, error) in
             if let error = error {
                 print("debug getVersionFiles error \(error)")
                 call.reject(error.localizedDescription)
@@ -467,10 +471,7 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
                     // NOTE: fileURLs from getFiles API is percent-encoded
                     let localFileURL = baseURL.appendingPathComponent("logseq/version-files/").appendingPathComponent(filePath.removingPercentEncoding!)
                     // empty progress handler
-                    let progressHandler = {(_: Double) in
-                    }
-
-                    client.download(url: remoteFileURL, progressHandler: progressHandler) {result in
+                    self.client.download(url: remoteFileURL, progressHandler: { _ in }) {result in
                         switch result {
                         case .failure(let error):
                             print("debug download \(error) in \(filePath)")
@@ -521,7 +522,7 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
             call.reject("cannot encrypt all file names")
         }
 
-        let client = SyncClient(token: token, graphUUID: graphUUID, txid: txid)
+        client.set(token: token, graphUUID: graphUUID, txid: txid)
         client.deleteFiles(filePaths) { txid, error in
             guard error == nil else {
                 call.reject("delete \(error!)")
@@ -551,11 +552,10 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
             return call.reject("empty filePaths")
         }
 
-        let client = SyncClient(token: token, graphUUID: graphUUID, txid: txid)
-        client.delegate = self
+        self.client.set(token: token, graphUUID: graphUUID, txid: txid)
 
         // 1. refresh_temp_credential
-        client.getTempCredential { (credentials, error) in
+        self.client.getTempCredential { (credentials, error) in
             guard error == nil else {
                 self.debugNotification(["event": "upload:error", "data": ["message": "error while refreshing credential: \(error!)"]])
                 call.reject("error(getTempCredential): \(error!)")
@@ -570,12 +570,16 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
             }
 
             // 2. upload_temp_file
-            let progressHandler = {(filePath: String, fraction: Double) in
+            let progressHandler = {(filePath: String, progress: Progress) in
                 self.debugNotification(["event": "upload:progress",
                                         "data": ["file": filePath,
-                                                 "fraction": fraction]])
+                                                 "graphUUID": graphUUID,
+                                                 "type": "upload",
+                                                 "progress": progress.completedUnitCount,
+                                                 "total": progress.totalUnitCount,
+                                                 "percent": Int(progress.fractionCompleted * 100)]])
             }
-            client.uploadTempFiles(files, credentials: credentials!, progressHandler: progressHandler) { (uploadedFileKeyDict, fileMd5Dict, error) in
+            self.client.uploadTempFiles(files, credentials: credentials!, progressHandler: progressHandler) { (uploadedFileKeyDict, fileMd5Dict, error) in
                 guard error == nil else {
                     self.debugNotification(["event": "upload:error", "data": ["message": "error while uploading temp files: \(error!)"]])
                     call.reject("error(uploadTempFiles): \(error!)")
@@ -604,7 +608,7 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
                         uploadedFileKeyMd5Dict[filePath] = [fileKey, fileMd5Dict[filePath]!]
                     }
                 }
-                client.updateFiles(uploadedFileKeyMd5Dict) { (txid, error) in
+                self.client.updateFiles(uploadedFileKeyMd5Dict) { (txid, error) in
                     guard error == nil else {
                         self.debugNotification(["event": "upload:error", "data": ["message": "error while updating files: \(error!)"]])
                         call.reject("error updateFiles: \(error!)")
@@ -618,6 +622,14 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
                     call.resolve(["ok": true, "files": uploadedFileKeyDict, "txid": txid])
                 }
             }
+        }
+    }
+
+    @objc func cancelAllRequest(_ call: CAPPluginCall) {
+        Task {
+            _ = await client.cancelAllRequest()
+            print("debug ... cancel all requres ")
+            call.resolve(["ok": true])
         }
     }
 

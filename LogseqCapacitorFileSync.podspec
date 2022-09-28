@@ -16,5 +16,6 @@ Pod::Spec.new do |s|
   s.dependency 'Capacitor'
   s.dependency 'AWSS3'
   s.dependency 'AgeEncryption', '~> 1.0.6'
+  s.dependency 'Alamofire'
   s.swift_version = '5.1'
 end

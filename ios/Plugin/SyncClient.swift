@@ -8,18 +8,22 @@
 import os
 import Foundation
 import AWSS3
+import Alamofire
 
 public protocol SyncDebugDelegate {
     func debugNotification(_ message: [String: Any])
 }
 
 public class SyncClient {
-    private var token: String
-    private var graphUUID: String?
+    private var token: String = ""
+    private var graphUUID: String!
     private var txid: Int = 0
     private var s3prefix: String?
 
     public var delegate: SyncDebugDelegate?
+
+    public init() {
+    }
 
     public init(token: String) {
         self.token = token
@@ -34,6 +38,17 @@ public class SyncClient {
         self.token = token
         self.graphUUID = graphUUID
         self.txid = txid
+    }
+
+    public func set(token: String, graphUUID: String, txid: Int) {
+        self.token = token
+        self.graphUUID = graphUUID
+        self.txid = txid
+    }
+
+    public func set(token: String, graphUUID: String) {
+        self.token = token
+        self.graphUUID = graphUUID
     }
 
     // get_files
@@ -298,7 +313,7 @@ public class SyncClient {
     public func uploadTempFiles(_ files: [String: URL],
                                 credentials: S3Credential,
                                 // key, fraction
-                                progressHandler: @escaping ((String, Double) -> Void),
+                                progressHandler: @escaping ((String, Progress) -> Void),
                                 completionHandler: @escaping ([String: String], [String: String], Error?) -> Void) {
         let credentialsProvider = AWSBasicSessionCredentialsProvider(
             accessKey: credentials.AccessKeyId, secretKey: credentials.SecretKey, sessionToken: credentials.SessionToken)
@@ -337,8 +352,8 @@ public class SyncClient {
                 return
             }
 
-            let progressHandler = {(fraction: Double) in
-                progressHandler(filePath, fraction)
+            let progressHandler = { progress in
+                progressHandler(filePath, progress)
             }
             putContent(url: presignURL, content: encryptedRawData, progressHandler: progressHandler) { error in
                 guard error == nil else {
@@ -359,75 +374,51 @@ public class SyncClient {
     }
 
     public func putContent(url: URL, content: Data,
-                           progressHandler: @escaping ((Double) -> Void),
+                           progressHandler: @escaping ((Progress) -> Void),
                            completion: @escaping (Error?) -> Void) {
-        var observation: NSKeyValueObservation! = nil
-
-        var request = URLRequest(url: url)
-        request.httpMethod = "PUT"
-        request.setValue("application/octet-stream", forHTTPHeaderField: "Content-Type")
-        request.httpBody = content
-
-        let task = URLSession.shared.dataTask(with: request) { data, response, error in
-            observation?.invalidate()
-
-            guard error == nil else {
-                completion(error!)
-                return
-            }
-            if let response = response as? HTTPURLResponse {
-                guard (200 ..< 299) ~= response.statusCode else {
-                    NSLog("debug error put content \(String(data: data!, encoding: .utf8))")
-                    completion(NSError(domain: FileSyncErrorDomain,
-                                       code: response.statusCode,
-                                       userInfo: [NSLocalizedDescriptionKey: "http put request failed"]))
-                    return
-                }
-            }
-            completion(nil)
+        AF.upload(content, to: url, method: .put, headers: nil, interceptor: nil, fileManager: FileManager.default, requestModifier: {
+            $0.timeoutInterval = max(30.0, Double(content.count / 10 / 1024))
+        })
+        .uploadProgress { progress in
+            print("debug upload progress \(progress)")
+            progressHandler(progress)
         }
-
-        observation = task.progress.observe(\.fractionCompleted) { progress, _ in
-            progressHandler(progress.fractionCompleted)
+        .response { response in
+            if response.error != nil {
+                completion(response.error!)
+            } else {
+                completion(nil)
+            }
         }
-
-        task.resume()
-
     }
 
+    // download a tempFile
     public func download(url: URL,
-                         progressHandler: @escaping ((Double) -> Void), // FIXME: cannot get total bytes
+                         progressHandler: @escaping ((Progress) -> Void), // FIXME: cannot get total bytes
                          completion: @escaping (Result<URL?, Error>) -> Void) {
-        var observation: NSKeyValueObservation! = nil
-
-        let task = URLSession.shared.downloadTask(with: url) {(tempURL, response, error) in
-            observation?.invalidate()
-
-            guard let tempURL = tempURL else {
-                completion(.failure(error!))
-                return
+        AF.download(url).responseURL { response in
+            if response.error == nil, let url = response.fileURL {
+                completion(.success(url))
+            } else {
+                completion(.failure(response.error!))
             }
-            guard let response = response as? HTTPURLResponse, response.statusCode == 200 else {
-                completion(.failure(NSError(domain: FileSyncErrorDomain,
-                                            code: 0,
-                                            userInfo: [NSLocalizedDescriptionKey: "http get request failed"])))
-                return
-            }
-            completion(.success(tempURL))
+        }.downloadProgress { progress in
+            print("debug download \(progress)")
+            progressHandler(progress)
         }
-
-        observation = task.progress.observe(\.fractionCompleted) { progress, _ in
-            progressHandler(progress.fractionCompleted)
-        }
-
-        task.resume()
     }
 
-    public func download(url: URL, progressHandler: @escaping ((Double) -> Void)) async -> Result<URL?, Error> {
+    public func download(url: URL, progressHandler: @escaping ((Progress) -> Void)) async -> Result<URL?, Error> {
         return await withCheckedContinuation { continuation in
             download(url: url, progressHandler: progressHandler) { result in
                 continuation.resume(returning: result)
             }
+        }
+    }
+
+    public func cancelAllRequest() async {
+        await AF.session.allTasks.forEach { task in
+            task.cancel()
         }
     }
 

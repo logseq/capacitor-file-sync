@@ -1,5 +1,5 @@
 # pod specs for AgeEncryption
-source 'https://github.com/andelf/Specs.git'
+source 'https://github.com/CocoaPods/Specs.git'
 
 platform :ios, '13.0'
 
@@ -15,6 +15,7 @@ target 'Plugin' do
   # deps
   pod 'AWSS3'
   pod 'AgeEncryption', '1.0.6'
+  pod 'Alamofire'
 end
 
 target 'PluginTests' do
