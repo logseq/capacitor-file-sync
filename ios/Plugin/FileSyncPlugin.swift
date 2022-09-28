@@ -159,6 +159,7 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
             call.reject("required parameter: env")
             return
         }
+        self.cancelAllRequest(call) // cancel all request when setting new env
         self.setKey(call)
 
         switch env {
