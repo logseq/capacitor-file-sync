@@ -347,4 +347,17 @@ public class FileSyncPlugin extends Plugin {
         ret.put("data", data);
         call.resolve(ret);
     }
+
+    @PluginMethod
+    public void cancelAllRequests(PluginCall call) {
+        long code = RSFileSync.cancelAllRequests();
+        if (code != 0) {
+            call.reject(RSFileSync.getLastError());
+            return;
+        }
+
+        JSObject ret = new JSObject();
+        ret.put("ok", true);
+        call.resolve(ret);
+    }
 }

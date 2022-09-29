@@ -416,7 +416,7 @@ public class SyncClient {
         }
     }
 
-    public func cancelAllRequest() async {
+    public func cancelAllRequests() async {
         await AF.session.allTasks.forEach { task in
             task.cancel()
         }

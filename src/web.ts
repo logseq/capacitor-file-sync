@@ -4,7 +4,7 @@ import { WebPlugin } from '@capacitor/core';
 import type { FileSyncPlugin } from './definitions';
 
 export class FileSyncWeb extends WebPlugin implements FileSyncPlugin {
-  cancelAllRequest(_options: unknown): Promise<void> {
+  cancelAllRequests(_options: unknown): Promise<void> {
     throw new Error('Method not implemented.');
   }
   keygen(): Promise<{ secretKey: string; publicKey: string }> {

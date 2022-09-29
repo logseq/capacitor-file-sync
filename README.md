@@ -26,6 +26,7 @@ npx cap sync
 * [`updateRemoteFiles(...)`](#updateremotefiles)
 * [`encryptWithPassphrase(...)`](#encryptwithpassphrase)
 * [`decryptWithPassphrase(...)`](#decryptwithpassphrase)
+* [`cancelAllRequests(...)`](#cancelallrequests)
 
 </docgen-index>
 
@@ -211,6 +212,19 @@ decryptWithPassphrase(options: { passphrase: string; content: string; }) => Prom
 | **`options`** | <code>{ passphrase: string; content: string; }</code> |
 
 **Returns:** <code>Promise&lt;{ data: string; }&gt;</code>
+
+--------------------
+
+
+### cancelAllRequests(...)
+
+```typescript
+cancelAllRequests(options: unknown) => Promise<void>
+```
+
+| Param         | Type                 |
+| ------------- | -------------------- |
+| **`options`** | <code>unknown</code> |
 
 --------------------
 

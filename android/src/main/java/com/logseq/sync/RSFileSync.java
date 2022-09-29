@@ -9,6 +9,8 @@ public class RSFileSync {
 
     public static native String getLastError();
 
+    public static native long cancelAllRequests();
+
     public static native String[] keygen();
 
     public static native long setEnvironment(String graphUUID, String env, String secretKey, String publicKey);

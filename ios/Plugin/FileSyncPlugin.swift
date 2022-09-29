@@ -159,7 +159,7 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
             call.reject("required parameter: env")
             return
         }
-        self.cancelAllRequest(call) // cancel all request when setting new env
+        self.cancelAllRequests(call) // cancel all requests when setting new env
         self.setKey(call)
 
         switch env {
@@ -626,9 +626,9 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
         }
     }
 
-    @objc func cancelAllRequest(_ call: CAPPluginCall) {
+    @objc func cancelAllRequests(_ call: CAPPluginCall) {
         Task {
-            _ = await client.cancelAllRequest()
+            _ = await client.cancelAllRequests()
             print("debug ... cancel all requres ")
             call.resolve(["ok": true])
         }

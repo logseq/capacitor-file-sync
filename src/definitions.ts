@@ -74,5 +74,5 @@ export interface FileSyncPlugin {
     content: string;
   }): Promise<{ data: string }>;
 
-  cancelAllRequest(options: unknown): Promise<void>;
+  cancelAllRequests(options: unknown): Promise<void>;
 }
