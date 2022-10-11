@@ -403,7 +403,6 @@ public class SyncClient {
                 completion(.failure(response.error!))
             }
         }.downloadProgress { progress in
-            print("debug download \(progress)")
             progressHandler(progress)
         }
     }

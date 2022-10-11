@@ -17,11 +17,34 @@ import org.json.JSONException;
 @CapacitorPlugin(name = "FileSync")
 public class FileSyncPlugin extends Plugin {
 
+    // save instance, used in jni
+    public static FileSyncPlugin mInstance = null;
+
     @Override
     public void load() {
         super.load();
 
+        mInstance = this;
         Log.i("FileSync", "Android plugin loaded");
+    }
+
+    public static FileSyncPlugin getInstance() {
+        return mInstance;
+    }
+
+    public void progressNotify(String graphUUID, String file, String type, long progress, long total) {
+        long percent = progress * 100 / total;
+
+        JSObject payload = new JSObject();
+        payload.put("graphUUID", graphUUID);
+        payload.put("file", file);
+        payload.put("type", type);
+        payload.put("progress", progress);
+        payload.put("total", total);
+        payload.put("percent", percent);
+        Log.i("FileSync", "progress notification " + payload.toString());
+
+        this.notifyListeners("progress", payload);
     }
 
     @PluginMethod

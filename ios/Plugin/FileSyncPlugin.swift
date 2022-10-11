@@ -406,13 +406,20 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
                 let localFileURL = baseURL.appendingPathComponent(filePath.removingPercentEncoding!)
 
                 let progressHandler = {(progress: Progress) in
-                    self.debugNotification(["event": "download:progress",
-                                            "data": ["file": filePath,
-                                                     "graphUUID": graphUUID,
-                                                     "type": "download",
-                                                     "progress": progress.completedUnitCount,
-                                                     "total": progress.totalUnitCount,
-                                                     "percent": Int(progress.fractionCompleted * 100)]])
+                    struct StaticHolder {
+                        static var percent = 0
+                    }
+                    let percent = Int(progress.fractionCompleted * 100)
+                    if percent / 5 != StaticHolder.percent / 5 {
+                        StaticHolder.percent = percent
+                        self.debugNotification(["event": "download:progress",
+                                                "data": ["file": filePath,
+                                                         "graphUUID": graphUUID,
+                                                         "type": "download",
+                                                         "progress": progress.completedUnitCount,
+                                                         "total": progress.totalUnitCount,
+                                                         "percent": percent]])
+                    }
                 }
 
                 self.client.download(url: remoteFileURL, progressHandler: progressHandler) {result in
@@ -572,13 +579,20 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
 
             // 2. upload_temp_file
             let progressHandler = {(filePath: String, progress: Progress) in
-                self.debugNotification(["event": "upload:progress",
-                                        "data": ["file": filePath,
-                                                 "graphUUID": graphUUID,
-                                                 "type": "upload",
-                                                 "progress": progress.completedUnitCount,
-                                                 "total": progress.totalUnitCount,
-                                                 "percent": Int(progress.fractionCompleted * 100)]])
+                struct StaticHolder {
+                    static var percent = 0
+                }
+                let percent = Int(progress.fractionCompleted * 100)
+                if percent / 5 != StaticHolder.percent / 5 {
+                    StaticHolder.percent = percent
+                    self.debugNotification(["event": "upload:progress",
+                                            "data": ["file": filePath,
+                                                     "graphUUID": graphUUID,
+                                                     "type": "upload",
+                                                     "progress": progress.completedUnitCount,
+                                                     "total": progress.totalUnitCount,
+                                                     "percent": percent]])
+                }
             }
             self.client.uploadTempFiles(files, credentials: credentials!, progressHandler: progressHandler) { (uploadedFileKeyDict, fileMd5Dict, error) in
                 guard error == nil else {
