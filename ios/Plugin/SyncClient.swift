@@ -396,7 +396,9 @@ public class SyncClient {
     public func download(url: URL,
                          progressHandler: @escaping ((Progress) -> Void), // FIXME: cannot get total bytes
                          completion: @escaping (Result<URL?, Error>) -> Void) {
-        AF.download(url).responseURL { response in
+        AF.download(url)
+          .validate(statusCode: 200..<300)
+          .responseURL { response in
             if response.error == nil, let url = response.fileURL {
                 completion(.success(url))
             } else {
