@@ -259,11 +259,12 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
 
     @objc func getLocalFilesMeta(_ call: CAPPluginCall) {
         // filePaths are url encoded
-        guard let basePath = call.getString("basePath"),
+        guard var basePath = call.getString("basePath"),
               let filePaths = call.getArray("filePaths") as? [String] else {
             call.reject("required paremeters: basePath, filePaths")
             return
         }
+        basePath = basePath.replacingOccurrences(of: "file:///var/mobile/", with: "file:///private/var/mobile/")
         guard let baseURL = URL(string: basePath) else {
             call.reject("invalid basePath")
             return
@@ -271,6 +272,10 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
 
         var fileMetadataDict: [String: [String: Any]] = [:]
         for percentFilePath in filePaths {
+            if percentFilePath.starts(with: "file://") {
+                call.reject("filePaths should be relative file paths")
+                return
+            }
             let filePath = percentFilePath.removingPercentEncoding!
             let url = baseURL.appendingPathComponent(filePath)
             if let meta = SyncMetadata(of: url) {
@@ -279,7 +284,6 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
                                               "ctime": meta.ctime,
                                               "mtime": meta.mtime]
                 metaObj["encryptedFname"] = filePath.fnameEncrypt(rawKey: FNAME_ENCRYPTION_KEY!)
-
                 fileMetadataDict[percentFilePath] = metaObj
             }
         }
@@ -288,12 +292,13 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
     }
 
     @objc func getLocalAllFilesMeta(_ call: CAPPluginCall) {
-        guard let basePath = call.getString("basePath"),
+        guard var basePath = call.getString("basePath"),
               let baseURL = URL(string: basePath) else {
             call.reject("invalid basePath")
             return
         }
 
+        basePath = basePath.replacingOccurrences(of: "file:///var/mobile/", with: "file:///private/var/mobile/")
         var fileMetadataDict: [String: [String: Any]] = [:]
         if let enumerator = FileManager.default.enumerator(at: baseURL, includingPropertiesForKeys: [.isRegularFileKey], options: [.skipsPackageDescendants, .skipsHiddenFiles]) {
 
@@ -301,13 +306,18 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
                 if !fileURL.isSkipSync() {
                     if let meta = SyncMetadata(of: fileURL) {
                         let filePath = fileURL.relativePath(from: baseURL)!
+                        // apply file name normalization
+                        let normalizedFilePath = filePath.precomposedStringWithCanonicalMapping
+                        if filePath != normalizedFilePath {
+                            print("[warning] should rename files from \(filePath) to \(normalizedFilePath)")
+                        }
+
                         var metaObj: [String: Any] = ["md5": meta.md5,
                                                       "size": meta.size,
                                                       "ctime": meta.ctime,
                                                       "mtime": meta.mtime]
-                        metaObj["encryptedFname"] = filePath.fnameEncrypt(rawKey: FNAME_ENCRYPTION_KEY!)
-
-                        fileMetadataDict[filePath.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed)!] = metaObj
+                        metaObj["encryptedFname"] = normalizedFilePath.fnameEncrypt(rawKey: FNAME_ENCRYPTION_KEY!)
+                        fileMetadataDict[normalizedFilePath.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed)!] = metaObj
                     }
                 } else if fileURL.isICloudPlaceholder() {
                     try? FileManager.default.startDownloadingUbiquitousItem(at: fileURL)
