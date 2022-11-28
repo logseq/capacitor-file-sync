@@ -40,7 +40,7 @@ func maybeEncrypt(_ plaindata: Data) -> Data! {
     }
     if let publicKey = ENCRYPTION_PUBLIC_KEY {
         // use armor = false, for smaller size
-        if let cipherdata = AgeEncryption.encryptWithX25519(plaindata, publicKey, armor: true) {
+        if let cipherdata = AgeEncryption.encryptWithX25519(plaindata, publicKey, armor: false) {
             return cipherdata
         }
         return nil // encryption fail
