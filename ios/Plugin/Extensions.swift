@@ -80,7 +80,7 @@ extension String {
         guard !self.isEmpty else {
             return nil
         }
-        guard let raw = self.data(using: .utf8) else {
+        guard let raw = self.precomposedStringWithCanonicalMapping.data(using: .utf8) else {
             return nil
         }
 
@@ -114,7 +114,7 @@ extension String {
         guard let outputRaw = try? ChaChaPoly.open(sealed, using: key) else {
             return nil
         }
-        return String(data: outputRaw, encoding: .utf8)
+        return String(data: outputRaw, encoding: .utf8)?.precomposedStringWithCanonicalMapping
     }
 }
 
