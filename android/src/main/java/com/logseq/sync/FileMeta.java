@@ -8,7 +8,7 @@ public class FileMeta {
     public long ctime; // creation time in millis
     public String md5;
     public String encryptedFilename;
-    public String incomingFileName;
+    public String incomingFilename;
 
     public FileMeta(String filePath, long size, long mtime, long ctime, String md5) {
         this.filePath = filePath;

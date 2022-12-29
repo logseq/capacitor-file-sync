@@ -165,7 +165,7 @@ public class FileSyncPlugin extends Plugin {
                     item.put("md5", meta.md5);
                     item.put("size", meta.size);
                     item.put("encryptedFname", meta.encryptedFilename);
-                    item.put("incomingFileName", meta.incomingFileName);
+                    item.put("incomingFname", meta.incomingFilename);
                     item.put("fname", meta.filePath);
                     item.put("mtime", meta.mtime);
                     item.put("ctime", meta.ctime);
@@ -199,7 +199,7 @@ public class FileSyncPlugin extends Plugin {
                     item.put("md5", meta.md5);
                     item.put("size", meta.size);
                     item.put("encryptedFname", meta.encryptedFilename);
-                    item.put("incomingFileName", meta.incomingFileName);
+                    item.put("incomingFilename", meta.incomingFilename);
                     item.put("fname", meta.filePath);
                     item.put("mtime", meta.mtime); // not used for now
                     dict.put(Uri.encode(meta.filePath, "/"), item);
