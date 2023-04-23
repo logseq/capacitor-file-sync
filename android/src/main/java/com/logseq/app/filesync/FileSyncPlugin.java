@@ -95,7 +95,7 @@ public class FileSyncPlugin extends Plugin {
             public void run() {
                 for (int i = 0; i < filePaths.size(); i++) {
                     String filePath = filePaths.get(i);
-                    filePaths.set(i, Uri.decode(filePath));
+                    filePaths.set(i, filePath);
                 }
 
                 String[] raw;
@@ -121,9 +121,6 @@ public class FileSyncPlugin extends Plugin {
             public void run() {
                 String[] raw;
                 raw = RSFileSync.decryptFilenames(graphUUID, filePaths);
-                for (int i = 0; i < raw.length; i++) {
-                    raw[i] = Uri.encode(raw[i], "/");
-                }
                 if (raw != null) {
                     JSObject ret = new JSObject();
                     ret.put("value", JSArray.from(raw));
@@ -147,7 +144,7 @@ public class FileSyncPlugin extends Plugin {
             public void run() {
                 for (int i = 0; i < filePaths.size(); i++) {
                     String filePath = filePaths.get(i);
-                    filePaths.set(i, Uri.decode(filePath));
+                    filePaths.set(i, filePath);
                 }
 
                 FileMeta[] metas = RSFileSync.getLocalFilesMeta(graphUUID, basePath, filePaths);
@@ -169,7 +166,7 @@ public class FileSyncPlugin extends Plugin {
                     item.put("fname", meta.filePath);
                     item.put("mtime", meta.mtime);
                     item.put("ctime", meta.ctime);
-                    dict.put(Uri.encode(meta.filePath, "/"), item);
+                    dict.put(meta.filePath, item);
                 }
                 JSObject ret = new JSObject();
                 ret.put("result", dict);
@@ -202,7 +199,7 @@ public class FileSyncPlugin extends Plugin {
                     item.put("incomingFilename", meta.incomingFilename);
                     item.put("fname", meta.filePath);
                     item.put("mtime", meta.mtime); // not used for now
-                    dict.put(Uri.encode(meta.filePath, "/"), item);
+                    dict.put(meta.filePath, item);
                 }
                 JSObject ret = new JSObject();
                 ret.put("result", dict);
@@ -217,9 +214,6 @@ public class FileSyncPlugin extends Plugin {
         String graphUUID = call.getString("graphUUID");
         String basePath = call.getString("basePath");
         List<String> filePaths = call.getArray("filePaths").toList();
-        for (int i = 0; i < filePaths.size(); i++) {
-            filePaths.set(i, Uri.decode(filePaths.get(i)));
-        }
 
         RSFileSync.deleteLocalFiles(graphUUID, basePath, filePaths);
 
@@ -234,10 +228,6 @@ public class FileSyncPlugin extends Plugin {
         String basePath = call.getString("basePath");
         List<String> filePaths = call.getArray("filePaths").toList();
         String token = call.getString("token");
-
-        for (int i = 0; i < filePaths.size(); i++) {
-            filePaths.set(i, Uri.decode(filePaths.get(i)));
-        }
 
         call.setKeepAlive(true);
         Thread runner = new Thread() {
@@ -263,10 +253,6 @@ public class FileSyncPlugin extends Plugin {
         List<String> filePaths = call.getArray("filePaths").toList();
         String token = call.getString("token");
 
-        for (int i = 0; i < filePaths.size(); i++) {
-            filePaths.set(i, Uri.decode(filePaths.get(i)));
-        }
-
         call.setKeepAlive(true);
         Thread runner = new Thread() {
             @Override
@@ -290,10 +276,6 @@ public class FileSyncPlugin extends Plugin {
         List<String> filePaths = call.getArray("filePaths").toList();
         String token = call.getString("token");
         long txid = call.getInt("txid").longValue();
-
-        for (int i = 0; i < filePaths.size(); i++) {
-            filePaths.set(i, Uri.decode(filePaths.get(i)));
-        }
 
         call.setKeepAlive(true);
         Thread runner = new Thread() {
@@ -321,10 +303,6 @@ public class FileSyncPlugin extends Plugin {
         String token = call.getString("token");
         long txid = call.getInt("txid").longValue();
         // NOTE: fnameEncryption is ignored. since it's always on.
-
-        for (int i = 0; i < filePaths.size(); i++) {
-            filePaths.set(i, Uri.decode(filePaths.get(i)));
-        }
 
         Thread runner = new Thread() {
             @Override
