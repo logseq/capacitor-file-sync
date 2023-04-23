@@ -191,7 +191,7 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
         }
 
         let nFiles = fnames.count
-        fnames = fnames.compactMap { $0.removingPercentEncoding!.fnameEncrypt(rawKey: FNAME_ENCRYPTION_KEY!) }
+        fnames = fnames.compactMap { $0.fnameEncrypt(rawKey: FNAME_ENCRYPTION_KEY!) }
         if fnames.count != nFiles {
             call.reject("cannot encrypt \(nFiles - fnames.count) file names")
         }
@@ -208,7 +208,7 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
             return
         }
         let nFiles = fnames.count
-        fnames = fnames.compactMap { $0.fnameDecrypt(rawKey: FNAME_ENCRYPTION_KEY!)?.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) }
+        fnames = fnames.compactMap { $0.fnameDecrypt(rawKey: FNAME_ENCRYPTION_KEY!) }
         if fnames.count != nFiles {
             call.reject("cannot decrypt \(nFiles - fnames.count) file names")
         }
@@ -271,12 +271,11 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
         }
 
         var fileMetadataDict: [String: [String: Any]] = [:]
-        for percentFilePath in filePaths {
-            if percentFilePath.starts(with: "file://") {
+        for filePath in filePaths {
+            if filePath.starts(with: "file://") {
                 call.reject("filePaths should be relative file paths")
                 return
             }
-            let filePath = percentFilePath.removingPercentEncoding!
             let url = baseURL.appendingPathComponent(filePath)
             if let meta = SyncMetadata(of: url) {
                 var metaObj: [String: Any] = ["md5": meta.md5,
@@ -284,7 +283,7 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
                                               "ctime": meta.ctime,
                                               "mtime": meta.mtime]
                 metaObj["encryptedFname"] = filePath.fnameEncrypt(rawKey: FNAME_ENCRYPTION_KEY!)
-                fileMetadataDict[percentFilePath] = metaObj
+                fileMetadataDict[filePath] = metaObj
             }
         }
 
@@ -317,7 +316,7 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
                                                       "ctime": meta.ctime,
                                                       "mtime": meta.mtime]
                         metaObj["encryptedFname"] = normalizedFilePath.fnameEncrypt(rawKey: FNAME_ENCRYPTION_KEY!)
-                        fileMetadataDict[normalizedFilePath.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed)!] = metaObj
+                        fileMetadataDict[normalizedFilePath] = metaObj
                     }
                 } else if fileURL.isICloudPlaceholder() {
                     try? FileManager.default.startDownloadingUbiquitousItem(at: fileURL)
@@ -342,8 +341,8 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
             return
         }
 
-        let fromUrl = baseURL.appendingPathComponent(from.removingPercentEncoding!)
-        let toUrl = baseURL.appendingPathComponent(to.removingPercentEncoding!)
+        let fromUrl = baseURL.appendingPathComponent(from)
+        let toUrl = baseURL.appendingPathComponent(to)
 
         do {
             try FileManager.default.moveItem(at: fromUrl, to: toUrl)
@@ -363,7 +362,7 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
         }
 
         for filePath in filePaths {
-            let fileUrl = baseURL.appendingPathComponent(filePath.removingPercentEncoding!)
+            let fileUrl = baseURL.appendingPathComponent(filePath)
             try? FileManager.default.removeItem(at: fileUrl) // ignore any delete errors
         }
         call.resolve(["ok": true])
@@ -383,7 +382,7 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
         var encryptedFilePathDict: [String: String] = [:]
         if fnameEncryptionEnabled() {
             for filePath in filePaths {
-                if let encryptedPath = filePath.removingPercentEncoding!.fnameEncrypt(rawKey: FNAME_ENCRYPTION_KEY!) {
+                if let encryptedPath = filePath.fnameEncrypt(rawKey: FNAME_ENCRYPTION_KEY!) {
                     encryptedFilePathDict[encryptedPath] = filePath
                 } else {
                     call.reject("cannot decrypt all file names")
@@ -413,7 +412,7 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
 
                 let filePath = encryptedFilePathDict[encryptedFilePath]!
                 // NOTE: fileURLs from getFiles API is percent-encoded
-                let localFileURL = baseURL.appendingPathComponent(filePath.removingPercentEncoding!)
+                let localFileURL = baseURL.appendingPathComponent(filePath)
 
                 let progressHandler = {(progress: Progress) in
                     struct StaticHolder {
@@ -487,7 +486,7 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
                     group.enter()
 
                     // NOTE: fileURLs from getFiles API is percent-encoded
-                    let localFileURL = baseURL.appendingPathComponent("logseq/version-files/").appendingPathComponent(filePath.removingPercentEncoding!)
+                    let localFileURL = baseURL.appendingPathComponent("logseq/version-files/").appendingPathComponent(filePath)
                     // empty progress handler
                     self.client.download(url: remoteFileURL, progressHandler: { _ in }) {result in
                         switch result {
@@ -534,7 +533,7 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
 
         let nFiles = filePaths.count
         if fnameEncryptionEnabled() {
-            filePaths = filePaths.compactMap { $0.removingPercentEncoding!.fnameEncrypt(rawKey: FNAME_ENCRYPTION_KEY!) }
+            filePaths = filePaths.compactMap { $0.fnameEncrypt(rawKey: FNAME_ENCRYPTION_KEY!) }
         }
         if filePaths.count != nFiles {
             call.reject("cannot encrypt all file names")
@@ -583,7 +582,7 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
             var files: [String: URL] = [:]
             for filePath in filePaths {
                 // NOTE: filePath from js may contain spaces
-                let fileURL = baseURL.appendingPathComponent(filePath.removingPercentEncoding!)
+                let fileURL = baseURL.appendingPathComponent(filePath)
                 files[filePath] = fileURL
             }
 
@@ -622,7 +621,7 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
 
                 if fnameEncryptionEnabled() && fnameEncryption {
                     for (filePath, fileKey) in uploadedFileKeyDict {
-                        guard let encryptedFilePath = filePath.removingPercentEncoding!.fnameEncrypt(rawKey: FNAME_ENCRYPTION_KEY!) else {
+                        guard let encryptedFilePath = filePath.fnameEncrypt(rawKey: FNAME_ENCRYPTION_KEY!) else {
                             call.reject("cannot encrypt file name")
                             return
                         }
