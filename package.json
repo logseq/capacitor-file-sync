@@ -1,6 +1,6 @@
 {
   "name": "@logseq/capacitor-file-sync",
-  "version": "0.0.22",
+  "version": "0.0.23",
   "description": "File sync for Logseq",
   "main": "dist/plugin.cjs.js",
   "module": "dist/esm/index.js",
