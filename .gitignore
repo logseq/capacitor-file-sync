@@ -61,3 +61,6 @@ captures
 .externalNativeBuild
 
 yarn.lock
+
+.metals
+.vscode
