@@ -104,6 +104,8 @@ public class FileSyncPlugin extends Plugin {
                     JSObject ret = new JSObject();
                     ret.put("value", JSArray.from(raw));
                     call.resolve(ret);
+                } else {
+                    call.reject(RSFileSync.getLastError());
                 }
             }
         };
@@ -125,6 +127,8 @@ public class FileSyncPlugin extends Plugin {
                     JSObject ret = new JSObject();
                     ret.put("value", JSArray.from(raw));
                     call.resolve(ret);
+                } else {
+                    call.reject(RSFileSync.getLastError());
                 }
             }
         };
@@ -220,6 +224,30 @@ public class FileSyncPlugin extends Plugin {
         JSObject ret = new JSObject();
         ret.put("ok", true);
         call.resolve(ret);
+    }
+
+    @PluginMethod
+    public void fetchRemoteFiles(PluginCall call) throws  JSONException {
+        String graphUUID = call.getString("graphUUID");
+        String basePath = call.getString("basePath");
+        List<String> filePaths = call.getArray("filePaths").toList();
+        String token = call.getString("token");
+
+        call.setKeepAlive(true);
+        Thread runner = new Thread() {
+            @Override
+            public void run() {
+                String[] fetchedFiles = RSFileSync.fetchRemoteFiles(graphUUID, basePath, filePaths, token);
+                if (fetchedFiles != null) {
+                    JSObject ret = new JSObject();
+                    ret.put("value", JSArray.from(fetchedFiles));
+                    call.resolve(ret);
+                } else {
+                    call.reject(RSFileSync.getLastError());
+                }
+            }
+        };
+        runner.start();
     }
 
     @PluginMethod

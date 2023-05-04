@@ -27,6 +27,8 @@ public class RSFileSync {
 
     public static native void deleteLocalFiles(String graphUUID, String basePath, List<String> filePaths);
 
+    public static native String[] fetchRemoteFiles(String graphUUID, String basePath, List<String> filePaths, String token);
+
     public static native long updateLocalFiles(String graphUUID, String basePath, List<String> filePaths, String token);
 
     public static native long updateLocalVersionFiles(String graphUUID, String basePath, List<String> filePaths, String token);
