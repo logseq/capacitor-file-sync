@@ -227,7 +227,7 @@ public class FileSyncPlugin extends Plugin {
     }
 
     @PluginMethod
-    public void fetchRemoteFiles(PluginCall call) throws  JSONException {
+    public void fetchRemoteFiles(PluginCall call) throws JSONException {
         String graphUUID = call.getString("graphUUID");
         String basePath = call.getString("basePath");
         List<String> filePaths = call.getArray("filePaths").toList();

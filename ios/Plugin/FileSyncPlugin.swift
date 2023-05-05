@@ -368,6 +368,103 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
         call.resolve(["ok": true])
     }
 
+    @objc func fetchRemoteFiles(_ call: CAPPluginCall) {
+        guard let baseURL = call.getString("basePath").flatMap({path in URL(string: path)}),
+              let filePaths = call.getArray("filePaths") as? [String],
+              let graphUUID = call.getString("graphUUID"),
+              let token = call.getString("token") else {
+            call.reject("required paremeters: basePath, filePaths, graphUUID, token")
+            return
+        }
+
+        // [encrypted-fname: original-fname]
+        var encryptedFilePathDict: [String: String] = [:]
+        for filePath in filePaths {
+            if let encryptedPath = filePath.fnameEncrypt(rawKey: FNAME_ENCRYPTION_KEY!) {
+                encryptedFilePathDict[encryptedPath] = filePath
+            } else {
+                call.reject("cannot decrypt all file names")
+            }
+        }
+
+        let encryptedFilePaths = Array(encryptedFilePathDict.keys)
+
+        var filesToBeMerged: [String] = []
+
+        self.client.set(token: token, graphUUID: graphUUID)
+        self.client.getFiles(at: encryptedFilePaths) { (fileURLs, error) in
+            guard error == nil else {
+                print("debug getFiles error \(String(describing: error))")
+                self.debugNotification(["event": "download:error", "data": ["message": "error while getting files \(filePaths)"]])
+                call.reject(error!.localizedDescription)
+                return
+            }
+            // handle multiple completionHandlers
+            let group = DispatchGroup()
+
+            var downloaded: [String] = []
+
+            for (encryptedFilePath, remoteFileURL) in fileURLs {
+                group.enter()
+
+                let filePath = encryptedFilePathDict[encryptedFilePath]!
+
+                var localFileURL: URL = baseURL.appendingPathComponent(filePath)
+                if localFileURL.pathExtension == "md" || localFileURL.pathExtension == "org" || localFileURL.pathExtension == "markdown" {
+                    filesToBeMerged.append(filePath)
+                    localFileURL = baseURL.appendingPathComponent("logseq/version-files/incoming").appendingPathComponent(filePath)
+                }
+
+                let progressHandler = {(progress: Progress) in
+                    struct StaticHolder {
+                        static var percent = 0
+                    }
+                    let percent = Int(progress.fractionCompleted * 100)
+                    if percent / 5 != StaticHolder.percent / 5 {
+                        StaticHolder.percent = percent
+                        self.debugNotification(["event": "download:progress",
+                                                "data": ["file": filePath,
+                                                         "graphUUID": graphUUID,
+                                                         "type": "download",
+                                                         "progress": progress.completedUnitCount,
+                                                         "total": progress.totalUnitCount,
+                                                         "percent": percent]])
+                    }
+                }
+
+                self.client.download(url: remoteFileURL, progressHandler: progressHandler) {result in
+                    switch result {
+                    case .failure(let error):
+                        self.debugNotification(["event": "download:error", "data": ["message": "error while downloading \(filePath): \(error)"]])
+                        print("debug download \(error) in \(filePath)")
+                    case .success(let tempURL):
+                        do {
+                            let rawData = try Data(contentsOf: tempURL!)
+                            guard let decryptedRawData = maybeDecrypt(rawData) else {
+                                throw NSError(domain: FileSyncErrorDomain,
+                                              code: 0,
+                                              userInfo: [NSLocalizedDescriptionKey: "can not decrypt downloaded file"])
+                            }
+                            try localFileURL.writeData(data: decryptedRawData)
+                            self.debugNotification(["event": "download:file", "data": ["file": filePath]])
+                            downloaded.append(filePath)
+                        } catch {
+                            // Handle potential file system errors
+                            self.debugNotification(["event": "download:error", "data": ["message": "error while downloading \(filePath): \(error)"]])
+                            print("debug download \(error) in \(filePath)")
+                        }
+                    }
+
+                    group.leave()
+                }
+            }
+            group.notify(queue: .main) {
+                self.debugNotification(["event": "download:done"])
+                call.resolve(["ok": true, "data": downloaded, "value": filesToBeMerged])
+            }
+        }
+    }
+
     /// remote -> local
     @objc func updateLocalFiles(_ call: CAPPluginCall) {
         guard let baseURL = call.getString("basePath").flatMap({path in URL(string: path)}),
@@ -642,6 +739,15 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
                         call.reject("error: missing txid")
                         return
                     }
+
+                    for filePath in uploadedFileKeyDict.keys {
+                        let from = files[filePath]!
+                        if from.pathExtension == "md" || from.pathExtension == "org" || from.pathExtension == "markdown" {
+                            let to = baseURL.appendingPathComponent("logseq/version-files/base").appendingPathComponent(filePath)
+                            try? FileManager.default.copyItem(at: from, to: to)
+                        }
+                    }
+
                     self.debugNotification(["event": "upload:done", "data": ["files": filePaths, "txid": txid]])
                     call.resolve(["ok": true, "files": uploadedFileKeyDict, "txid": txid])
                 }

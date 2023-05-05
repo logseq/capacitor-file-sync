@@ -10,6 +10,7 @@ CAP_PLUGIN(FileSyncPlugin, "FileSync",
            CAP_PLUGIN_METHOD(getLocalAllFilesMeta, CAPPluginReturnPromise);
            CAP_PLUGIN_METHOD(renameLocalFile, CAPPluginReturnPromise);
            CAP_PLUGIN_METHOD(deleteLocalFiles, CAPPluginReturnPromise);
+           CAP_PLUGIN_METHOD(fetchRemoteFiles, CAPPluginReturnPromise);
            CAP_PLUGIN_METHOD(updateLocalFiles, CAPPluginReturnPromise);
            CAP_PLUGIN_METHOD(deleteRemoteFiles, CAPPluginReturnPromise);
            CAP_PLUGIN_METHOD(updateRemoteFiles, CAPPluginReturnPromise);
