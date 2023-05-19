@@ -35,6 +35,13 @@ export interface FileSyncPlugin {
     filePaths: string[];
   }): Promise<void>;
 
+  fetchRemoteFiles(options: {
+    graphUUID: string;
+    basePath: string;
+    filePaths: string[];
+    token: string;
+  }): Promise<void>;
+
   updateLocalFiles(options: {
     graphUUID: string;
     basePath: string;

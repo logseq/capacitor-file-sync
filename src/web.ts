@@ -4,6 +4,9 @@ import { WebPlugin } from '@capacitor/core';
 import type { FileSyncPlugin } from './definitions';
 
 export class FileSyncWeb extends WebPlugin implements FileSyncPlugin {
+  fetchRemoteFiles(_options: { graphUUID: string; basePath: string; filePaths: string[]; token: string; }): Promise<void> {
+    throw new Error('Method not implemented.');
+  }
   cancelAllRequests(_options: unknown): Promise<void> {
     throw new Error('Method not implemented.');
   }

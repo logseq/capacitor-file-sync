@@ -1,12 +1,22 @@
 # @logseq/capacitor-file-sync
 
-File sync for Logseq
+Logseq Sync for mobile platforms.
 
 ## Install
 
 ```bash
 npm install @logseq/capacitor-file-sync
 npx cap sync
+```
+
+## Local Development
+
+```bash
+# run the following in capacitor-file-sync/ folder
+yarn link
+
+# run the following in logseq/ folder
+yarn link @logseq/capacitor-file-sync
 ```
 
 ## API
@@ -20,6 +30,7 @@ npx cap sync
 * [`getLocalFilesMeta(...)`](#getlocalfilesmeta)
 * [`getLocalAllFilesMeta(...)`](#getlocalallfilesmeta)
 * [`deleteLocalFiles(...)`](#deletelocalfiles)
+* [`fetchRemoteFiles(...)`](#fetchremotefiles)
 * [`updateLocalFiles(...)`](#updatelocalfiles)
 * [`updateLocalVersionFiles(...)`](#updatelocalversionfiles)
 * [`deleteRemoteFiles(...)`](#deleteremotefiles)
@@ -126,6 +137,19 @@ deleteLocalFiles(options: { graphUUID: string; basePath: string; filePaths: stri
 | Param         | Type                                                                       |
 | ------------- | -------------------------------------------------------------------------- |
 | **`options`** | <code>{ graphUUID: string; basePath: string; filePaths: string[]; }</code> |
+
+--------------------
+
+
+### fetchRemoteFiles(...)
+
+```typescript
+fetchRemoteFiles(options: { graphUUID: string; basePath: string; filePaths: string[]; token: string; }) => Promise<void>
+```
+
+| Param         | Type                                                                                      |
+| ------------- | ----------------------------------------------------------------------------------------- |
+| **`options`** | <code>{ graphUUID: string; basePath: string; filePaths: string[]; token: string; }</code> |
 
 --------------------
 
