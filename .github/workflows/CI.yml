@@ -1,4 +1,4 @@
-name: Build & Publish
+name: CI
 
 on:
   push:
@@ -22,10 +22,21 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - run: npm install
+      - name: Install Node.js, NPM and Yarn
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup Java JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: ${{ env.JAVA_VERSION }}
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v2
+
+      - run: npm install
 
       - run: npm run verify
 
@@ -33,6 +44,7 @@ jobs:
 
   publish:
     runs-on: ubuntu-latest
+    name: Publish
     if: "startsWith(github.event.head_commit.message, 'chore(release): publish')"
     steps:
       - uses: actions/checkout@v3
