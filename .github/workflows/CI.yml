@@ -51,5 +51,8 @@ jobs:
 
       - run: npm install
 
+      - name: Add NPM token
+        run: echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" >> ~/.npmrc
+
       - name: Publish to NPM
         run: npm publish --access public
