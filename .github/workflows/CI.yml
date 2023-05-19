@@ -1,0 +1,31 @@
+name: Build &
+env:
+  DEBUG: 'napi:*'
+  MACOSX_DEPLOYMENT_TARGET: '10.13'
+  NODE_OPTIONS: '--max-old-space-size=3072'
+  CARGO_UNSTABLE_TARGET_APPLIES_TO_HOST: true
+  CARGO_TARGET_APPLIES_TO_HOST: false
+
+on:
+  push:
+    branches:
+      - master
+    # tags-ignore:
+    #   - '**'
+    # paths:
+    #   - 'android'
+    #   - 'ios'
+  pull_request:
+
+jobs:
+  test:
+    runs-on: macos-latest
+    name: Check
+    steps:
+      - uses: actions/checkout@v3
+
+      - run: yarn install
+
+      - run: yarn verify
+
+      - run: yarn prepublishOnly
