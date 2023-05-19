@@ -1,10 +1,4 @@
-name: Build &
-env:
-  DEBUG: 'napi:*'
-  MACOSX_DEPLOYMENT_TARGET: '10.13'
-  NODE_OPTIONS: '--max-old-space-size=3072'
-  CARGO_UNSTABLE_TARGET_APPLIES_TO_HOST: true
-  CARGO_TARGET_APPLIES_TO_HOST: false
+name: Build & Publish
 
 on:
   push:
@@ -24,8 +18,19 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - run: yarn install
+      - run: npm install
 
-      - run: yarn verify
+      - run: npm run verify
 
-      - run: yarn prepublishOnly
+      - run: npm run prepublishOnly
+
+  publish:
+    runs-on: ubuntu-latest
+    if: "startsWith(github.event.head_commit.message, 'chore(release): publish')"
+    steps:
+      - uses: actions/checkout@v3
+
+      - run: npm install
+
+      - name: Publish to NPM
+        run: npm publish --access public
