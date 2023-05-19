@@ -2,13 +2,6 @@
 
 Logseq Sync for mobile platforms.
 
-## Install
-
-```bash
-npm install @logseq/capacitor-file-sync
-npx cap sync
-```
-
 ## Local Development
 
 ```bash
@@ -19,7 +12,14 @@ yarn link
 yarn link @logseq/capacitor-file-sync
 ```
 
-## API
+## Install
+
+```bash
+npm install @logseq/capacitor-file-sync
+npx cap sync
+```
+
+## API Doc
 
 <docgen-index>
 
