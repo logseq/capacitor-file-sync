@@ -43,8 +43,9 @@ jobs:
       - run: npm run prepublishOnly
 
   publish:
-    runs-on: ubuntu-latest
     name: Publish
+    runs-on: ubuntu-latest
+    needs: test
     if: "startsWith(github.event.head_commit.message, 'chore(release): publish')"
     steps:
       - uses: actions/checkout@v3
