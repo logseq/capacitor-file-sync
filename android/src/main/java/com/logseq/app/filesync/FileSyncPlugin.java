@@ -301,6 +301,7 @@ public class FileSyncPlugin extends Plugin {
     @PluginMethod
     public void deleteRemoteFiles(PluginCall call) throws JSONException {
         String graphUUID = call.getString("graphUUID");
+        String basePath = call.getString("basePath");
         List<String> filePaths = call.getArray("filePaths").toList();
         String token = call.getString("token");
         long txid = call.getInt("txid").longValue();
@@ -309,7 +310,7 @@ public class FileSyncPlugin extends Plugin {
         Thread runner = new Thread() {
             @Override
             public void run() {
-                long code = RSFileSync.deleteRemoteFiles(graphUUID, filePaths, token, txid);
+                long code = RSFileSync.deleteRemoteFiles(graphUUID, basePath, filePaths, token, txid);
                 if (code != -1) {
                     JSObject ret = new JSObject();
                     ret.put("ok", true);

@@ -33,7 +33,7 @@ public class RSFileSync {
 
     public static native long updateLocalVersionFiles(String graphUUID, String basePath, List<String> filePaths, String token);
 
-    public static native long deleteRemoteFiles(String graphUUID, List<String> filePaths, String token, long txid);
+    public static native long deleteRemoteFiles(String graphUUID, String basePath, List<String> filePaths, String token, long txid);
 
     public static native long updateRemoteFiles(String graphUUID, String basePath, List<String> filePaths, String token, long txid);
 

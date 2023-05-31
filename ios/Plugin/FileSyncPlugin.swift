@@ -616,7 +616,8 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
 
     // filePaths: Encrypted file paths
     @objc func deleteRemoteFiles(_ call: CAPPluginCall) {
-        guard var filePaths = call.getArray("filePaths") as? [String],
+        guard let baseURL = call.getString("basePath").flatMap({path in URL(string: path)}),
+              var filePaths = call.getArray("filePaths") as? [String],
               let graphUUID = call.getString("graphUUID"),
               let token = call.getString("token"),
               let txid = call.getInt("txid") else {
@@ -646,6 +647,18 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
                 call.reject("missing txid")
                 return
             }
+
+            // delete all file
+            for filePath in filePaths {
+                let localFileURL = baseURL.appendingPathComponent("logseq/version-files/base").appendingPathComponent(filePath)
+                do {
+                    try FileManager.default.removeItem(at: localFileURL)
+                } catch {
+                    // sliently ignore
+                    print("debug delete \(error) in \(filePath)")
+                }
+            }
+
             call.resolve(["ok": true, "txid": txid])
         }
     }
