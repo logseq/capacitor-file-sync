@@ -758,6 +758,7 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
                         if from.pathExtension == "md" || from.pathExtension == "org" || from.pathExtension == "markdown" {
                             let to = baseURL.appendingPathComponent("logseq/version-files/base").appendingPathComponent(filePath)
                             try? FileManager.default.removeItem(at: to)
+                            to.ensureParentDir()
                             try? FileManager.default.copyItem(at: from, to: to)
                         }
                     }
