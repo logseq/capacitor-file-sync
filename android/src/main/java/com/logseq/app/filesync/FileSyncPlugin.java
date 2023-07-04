@@ -354,6 +354,9 @@ public class FileSyncPlugin extends Plugin {
     public void encryptWithPassphrase(PluginCall call) {
         String passphrase = call.getString("passphrase");
         String content = call.getString("content");
+        if (passphrase == null || content == null) {
+            call.reject("passphrase and content must not be empty");
+        }
         byte[] encrypted = RSFileSync.ageEncryptWithPassphrase(passphrase, content.getBytes(StandardCharsets.UTF_8));
         if (encrypted == null) {
             call.reject(RSFileSync.getLastError());
@@ -369,6 +372,9 @@ public class FileSyncPlugin extends Plugin {
     public void decryptWithPassphrase(PluginCall call) {
         String passphrase = call.getString("passphrase");
         String content = call.getString("content");
+        if (passphrase == null || content == null) {
+            call.reject("passphrase and content must not be empty");
+        }
         byte[] encrypted = RSFileSync.ageDecryptWithPassphrase(passphrase, content.getBytes(StandardCharsets.UTF_8));
         if (encrypted == null) {
             call.reject(RSFileSync.getLastError());
