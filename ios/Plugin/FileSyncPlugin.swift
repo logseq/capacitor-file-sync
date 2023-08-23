@@ -438,6 +438,11 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
                         self.debugNotification(["event": "download:error", "data": ["message": "error while downloading \(filePath): \(error)"]])
                         print("debug download \(error) in \(filePath)")
                     case .success(let tempURL):
+                        self.debugNotification(["event": "download:progress",
+                                                "data": ["file": filePath,
+                                                         "graphUUID": graphUUID,
+                                                         "type": "download",
+                                                         "percent": 100]])
                         do {
                             let rawData = try Data(contentsOf: tempURL!)
                             guard let decryptedRawData = maybeDecrypt(rawData) else {

@@ -87,7 +87,7 @@ public class SyncClient {
             if let data = data {
                 let resp = try? JSONDecoder().decode([String: [String: String]].self, from: data)
                 let files = resp?["PresignedFileUrls"] ?? [:]
-                self.delegate?.debugNotification(["event": "download:prepare"])
+                // self.delegate?.debugNotification(["event": "download:prepare"])
                 completionHandler(files.mapValues({ url in URL(string: url)!}), nil)
             } else {
                 // Handle unexpected error
@@ -131,7 +131,7 @@ public class SyncClient {
             if let data = data {
                 let resp = try? JSONDecoder().decode([String: [String: String]].self, from: data)
                 let files = resp?["PresignedFileUrls"] ?? [:]
-                self.delegate?.debugNotification(["event": "version-download:prepare"])
+                // self.delegate?.debugNotification(["event": "version-download:prepare"])
                 completionHandler(files.mapValues({ url in URL(string: url)!}), nil)
             } else {
                 // Handle unexpected error
