@@ -151,7 +151,6 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
         ENCRYPTION_SECRET_KEY = secretKey
         ENCRYPTION_PUBLIC_KEY = publicKey
         FNAME_ENCRYPTION_KEY = AgeEncryption.toRawX25519Key(secretKey)
-
     }
 
     @objc func setEnv(_ call: CAPPluginCall) {
@@ -225,6 +224,7 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
             call.reject("cannot decode ciphertext with utf8")
             return
         }
+
         self.bridge?.saveCall(call)
         DispatchQueue.global(qos: .default).async {
             if let encrypted = AgeEncryption.encryptWithPassphrase(plaintext, passphrase, armor: true) {
@@ -246,6 +246,7 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
             call.reject("cannot decode ciphertext with utf8")
             return
         }
+
         self.bridge?.saveCall(call)
         DispatchQueue.global(qos: .default).async {
             if let decrypted = AgeEncryption.decryptWithPassphrase(ciphertext, passphrase) {
@@ -270,24 +271,23 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
             return
         }
 
-        var fileMetadataDict: [String: [String: Any]] = [:]
-        for filePath in filePaths {
-            if filePath.starts(with: "file://") {
-                call.reject("filePaths should be relative file paths")
-                return
+        self.bridge?.saveCall(call)
+        DispatchQueue.global(qos: .default).async {
+            var fileMetadataDict: [String: [String: Any]] = [:]
+            for filePath in filePaths {
+                let url = baseURL.appendingPathComponent(filePath)
+                if let meta = SyncMetadata(of: url) {
+                    var metaObj: [String: Any] = ["md5": meta.md5,
+                                                  "size": meta.size,
+                                                  "ctime": meta.ctime,
+                                                  "mtime": meta.mtime]
+                    metaObj["encryptedFname"] = filePath.fnameEncrypt(rawKey: FNAME_ENCRYPTION_KEY!)
+                    fileMetadataDict[filePath] = metaObj
+                }
             }
-            let url = baseURL.appendingPathComponent(filePath)
-            if let meta = SyncMetadata(of: url) {
-                var metaObj: [String: Any] = ["md5": meta.md5,
-                                              "size": meta.size,
-                                              "ctime": meta.ctime,
-                                              "mtime": meta.mtime]
-                metaObj["encryptedFname"] = filePath.fnameEncrypt(rawKey: FNAME_ENCRYPTION_KEY!)
-                fileMetadataDict[filePath] = metaObj
-            }
+            call.resolve(["result": fileMetadataDict])
+            self.bridge?.releaseCall(call)
         }
-
-        call.resolve(["result": fileMetadataDict])
     }
 
     @objc func getLocalAllFilesMeta(_ call: CAPPluginCall) {
@@ -298,32 +298,36 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
         }
 
         basePath = basePath.replacingOccurrences(of: "file:///var/mobile/", with: "file:///private/var/mobile/")
-        var fileMetadataDict: [String: [String: Any]] = [:]
-        if let enumerator = FileManager.default.enumerator(at: baseURL, includingPropertiesForKeys: [.isRegularFileKey], options: [.skipsPackageDescendants, .skipsHiddenFiles]) {
 
-            for case let fileURL as URL in enumerator {
-                if !fileURL.isSkipSync() {
-                    if let meta = SyncMetadata(of: fileURL) {
-                        let filePath = fileURL.relativePath(from: baseURL)!
-                        // apply file name normalization
-                        let normalizedFilePath = filePath.precomposedStringWithCanonicalMapping
-                        if filePath != normalizedFilePath {
-                            print("[warning] should rename files from \(filePath) to \(normalizedFilePath)")
+        self.bridge?.saveCall(call)
+        DispatchQueue.global(qos: .default).async {
+            var fileMetadataDict: [String: [String: Any]] = [:]
+            if let enumerator = FileManager.default.enumerator(at: baseURL, includingPropertiesForKeys: [.isRegularFileKey], options: [.skipsPackageDescendants, .skipsHiddenFiles]) {
+                for case let fileURL as URL in enumerator {
+                    if !fileURL.isSkipSync() {
+                        if let meta = SyncMetadata(of: fileURL) {
+                            let filePath = fileURL.relativePath(from: baseURL)!
+                            // apply file name normalization
+                            let normalizedFilePath = filePath.precomposedStringWithCanonicalMapping
+                            if filePath != normalizedFilePath {
+                                print("[warning] should rename files from \(filePath) to \(normalizedFilePath)")
+                            }
+
+                            var metaObj: [String: Any] = ["md5": meta.md5,
+                                                          "size": meta.size,
+                                                          "ctime": meta.ctime,
+                                                          "mtime": meta.mtime]
+                            metaObj["encryptedFname"] = normalizedFilePath.fnameEncrypt(rawKey: FNAME_ENCRYPTION_KEY!)
+                            fileMetadataDict[normalizedFilePath] = metaObj
                         }
-
-                        var metaObj: [String: Any] = ["md5": meta.md5,
-                                                      "size": meta.size,
-                                                      "ctime": meta.ctime,
-                                                      "mtime": meta.mtime]
-                        metaObj["encryptedFname"] = normalizedFilePath.fnameEncrypt(rawKey: FNAME_ENCRYPTION_KEY!)
-                        fileMetadataDict[normalizedFilePath] = metaObj
+                    } else if fileURL.isICloudPlaceholder() {
+                        try? FileManager.default.startDownloadingUbiquitousItem(at: fileURL)
                     }
-                } else if fileURL.isICloudPlaceholder() {
-                    try? FileManager.default.startDownloadingUbiquitousItem(at: fileURL)
                 }
             }
+            call.resolve(["result": fileMetadataDict])
+            self.bridge?.releaseCall(call)
         }
-        call.resolve(["result": fileMetadataDict])
     }
 
     @objc func renameLocalFile(_ call: CAPPluginCall) {
@@ -392,80 +396,86 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
         var filesToBeMerged: [String] = []
 
         self.client.set(token: token, graphUUID: graphUUID)
-        self.client.getFiles(at: encryptedFilePaths) { (fileURLs, error) in
-            guard error == nil else {
-                print("debug getFiles error \(String(describing: error))")
-                self.debugNotification(["event": "download:error", "data": ["message": "error while getting files \(filePaths)"]])
-                call.reject(error!.localizedDescription)
-                return
-            }
-            // handle multiple completionHandlers
-            let group = DispatchGroup()
 
-            var downloaded: [String] = []
-
-            for (encryptedFilePath, remoteFileURL) in fileURLs {
-                group.enter()
-
-                let filePath = encryptedFilePathDict[encryptedFilePath]!
-
-                var localFileURL: URL = baseURL.appendingPathComponent(filePath)
-                if localFileURL.pathExtension == "md" || localFileURL.pathExtension == "org" || localFileURL.pathExtension == "markdown" {
-                    filesToBeMerged.append(filePath)
-                    localFileURL = baseURL.appendingPathComponent("logseq/version-files/incoming").appendingPathComponent(filePath)
+        self.bridge?.saveCall(call)
+        DispatchQueue.global(qos: .default).async {
+            self.client.getFiles(at: encryptedFilePaths) { (fileURLs, error) in
+                guard error == nil else {
+                    print("debug getFiles error \(String(describing: error))")
+                    self.debugNotification(["event": "download:error", "data": ["message": "error while getting files \(filePaths)"]])
+                    call.reject(error!.localizedDescription)
+                    self.bridge?.releaseCall(call)
+                    return
                 }
+                // handle multiple completionHandlers
+                let group = DispatchGroup()
 
-                let progressHandler = {(progress: Progress) in
-                    struct StaticHolder {
-                        static var percent = 0
-                    }
-                    let percent = Int(progress.fractionCompleted * 100)
-                    if percent / 5 != StaticHolder.percent / 5 {
-                        StaticHolder.percent = percent
-                        self.debugNotification(["event": "download:progress",
-                                                "data": ["file": filePath,
-                                                         "graphUUID": graphUUID,
-                                                         "type": "download",
-                                                         "progress": progress.completedUnitCount,
-                                                         "total": progress.totalUnitCount,
-                                                         "percent": percent]])
-                    }
-                }
+                var downloaded: [String] = []
 
-                self.client.download(url: remoteFileURL, progressHandler: progressHandler) {result in
-                    switch result {
-                    case .failure(let error):
-                        self.debugNotification(["event": "download:error", "data": ["message": "error while downloading \(filePath): \(error)"]])
-                        print("debug download \(error) in \(filePath)")
-                    case .success(let tempURL):
-                        self.debugNotification(["event": "download:progress",
-                                                "data": ["file": filePath,
-                                                         "graphUUID": graphUUID,
-                                                         "type": "download",
-                                                         "percent": 100]])
-                        do {
-                            let rawData = try Data(contentsOf: tempURL!)
-                            guard let decryptedRawData = maybeDecrypt(rawData) else {
-                                throw NSError(domain: FileSyncErrorDomain,
-                                              code: 0,
-                                              userInfo: [NSLocalizedDescriptionKey: "can not decrypt downloaded file"])
-                            }
-                            try localFileURL.writeData(data: decryptedRawData)
-                            self.debugNotification(["event": "download:file", "data": ["file": filePath]])
-                            downloaded.append(filePath)
-                        } catch {
-                            // Handle potential file system errors
-                            self.debugNotification(["event": "download:error", "data": ["message": "error while downloading \(filePath): \(error)"]])
-                            print("debug download \(error) in \(filePath)")
+                for (encryptedFilePath, remoteFileURL) in fileURLs {
+                    group.enter()
+
+                    let filePath = encryptedFilePathDict[encryptedFilePath]!
+
+                    var localFileURL: URL = baseURL.appendingPathComponent(filePath)
+                    if localFileURL.pathExtension == "md" || localFileURL.pathExtension == "org" || localFileURL.pathExtension == "markdown" {
+                        filesToBeMerged.append(filePath)
+                        localFileURL = baseURL.appendingPathComponent("logseq/version-files/incoming").appendingPathComponent(filePath)
+                    }
+
+                    let progressHandler = {(progress: Progress) in
+                        struct StaticHolder {
+                            static var percent = 0
+                        }
+                        let percent = Int(progress.fractionCompleted * 100)
+                        if percent / 5 != StaticHolder.percent / 5 {
+                            StaticHolder.percent = percent
+                            self.debugNotification(["event": "download:progress",
+                                                    "data": ["file": filePath,
+                                                             "graphUUID": graphUUID,
+                                                             "type": "download",
+                                                             "progress": progress.completedUnitCount,
+                                                             "total": progress.totalUnitCount,
+                                                             "percent": percent]])
                         }
                     }
 
-                    group.leave()
+                    self.client.download(url: remoteFileURL, progressHandler: progressHandler) {result in
+                        switch result {
+                        case .failure(let error):
+                            self.debugNotification(["event": "download:error", "data": ["message": "error while downloading \(filePath): \(error)"]])
+                            print("debug download \(error) in \(filePath)")
+                        case .success(let tempURL):
+                            self.debugNotification(["event": "download:progress",
+                                                    "data": ["file": filePath,
+                                                             "graphUUID": graphUUID,
+                                                             "type": "download",
+                                                             "percent": 100]])
+                            do {
+                                let rawData = try Data(contentsOf: tempURL!)
+                                guard let decryptedRawData = maybeDecrypt(rawData) else {
+                                    throw NSError(domain: FileSyncErrorDomain,
+                                                  code: 0,
+                                                  userInfo: [NSLocalizedDescriptionKey: "can not decrypt downloaded file"])
+                                }
+                                try localFileURL.writeData(data: decryptedRawData)
+                                self.debugNotification(["event": "download:file", "data": ["file": filePath]])
+                                downloaded.append(filePath)
+                            } catch {
+                                // Handle potential file system errors
+                                self.debugNotification(["event": "download:error", "data": ["message": "error while downloading \(filePath): \(error)"]])
+                                print("debug download \(error) in \(filePath)")
+                            }
+                        }
+
+                        group.leave()
+                    }
                 }
-            }
-            group.notify(queue: .main) {
-                self.debugNotification(["event": "download:done"])
-                call.resolve(["ok": true, "data": downloaded, "value": filesToBeMerged])
+                group.notify(queue: .main) {
+                    self.debugNotification(["event": "download:done"])
+                    call.resolve(["ok": true, "data": downloaded, "value": filesToBeMerged])
+                    self.bridge?.releaseCall(call)
+                }
             }
         }
     }
@@ -778,7 +788,7 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
     @objc func cancelAllRequests(_ call: CAPPluginCall) {
         Task {
             _ = await client.cancelAllRequests()
-            print("debug ... cancel all requres ")
+            print("[debug] cancel all requres")
             call.resolve(["ok": true])
         }
     }
