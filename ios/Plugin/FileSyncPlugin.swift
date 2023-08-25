@@ -225,14 +225,12 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
             return
         }
 
-        self.bridge?.saveCall(call)
         DispatchQueue.global(qos: .default).async {
             if let encrypted = AgeEncryption.encryptWithPassphrase(plaintext, passphrase, armor: true) {
                 call.resolve(["data": String(data: encrypted, encoding: .utf8) as Any])
             } else {
                 call.reject("cannot encrypt with passphrase")
             }
-            self.bridge?.releaseCall(call)
         }
     }
 
@@ -247,14 +245,12 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
             return
         }
 
-        self.bridge?.saveCall(call)
         DispatchQueue.global(qos: .default).async {
             if let decrypted = AgeEncryption.decryptWithPassphrase(ciphertext, passphrase) {
                 call.resolve(["data": String(data: decrypted, encoding: .utf8) as Any])
             } else {
                 call.reject("cannot decrypt with passphrase")
             }
-            self.bridge?.releaseCall(call)
         }
     }
 
@@ -271,7 +267,6 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
             return
         }
 
-        self.bridge?.saveCall(call)
         DispatchQueue.global(qos: .default).async {
             var fileMetadataDict: [String: [String: Any]] = [:]
             for filePath in filePaths {
@@ -286,7 +281,6 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
                 }
             }
             call.resolve(["result": fileMetadataDict])
-            self.bridge?.releaseCall(call)
         }
     }
 
@@ -299,7 +293,6 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
 
         basePath = basePath.replacingOccurrences(of: "file:///var/mobile/", with: "file:///private/var/mobile/")
 
-        self.bridge?.saveCall(call)
         DispatchQueue.global(qos: .default).async {
             var fileMetadataDict: [String: [String: Any]] = [:]
             if let enumerator = FileManager.default.enumerator(at: baseURL, includingPropertiesForKeys: [.isRegularFileKey], options: [.skipsPackageDescendants, .skipsHiddenFiles]) {
@@ -326,7 +319,6 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
                 }
             }
             call.resolve(["result": fileMetadataDict])
-            self.bridge?.releaseCall(call)
         }
     }
 
@@ -397,14 +389,12 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
 
         self.client.set(token: token, graphUUID: graphUUID)
 
-        self.bridge?.saveCall(call)
         DispatchQueue.global(qos: .default).async {
             self.client.getFiles(at: encryptedFilePaths) { (fileURLs, error) in
                 guard error == nil else {
                     print("debug getFiles error \(String(describing: error))")
                     self.debugNotification(["event": "download:error", "data": ["message": "error while getting files \(filePaths)"]])
                     call.reject(error!.localizedDescription)
-                    self.bridge?.releaseCall(call)
                     return
                 }
                 // handle multiple completionHandlers
@@ -474,7 +464,6 @@ public class FileSyncPlugin: CAPPlugin, SyncDebugDelegate {
                 group.notify(queue: .main) {
                     self.debugNotification(["event": "download:done"])
                     call.resolve(["ok": true, "data": downloaded, "value": filesToBeMerged])
-                    self.bridge?.releaseCall(call)
                 }
             }
         }
